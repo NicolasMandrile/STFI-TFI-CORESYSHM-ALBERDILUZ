@@ -1,0 +1,67 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Categorías</h1>
+      <p class="page-subtitle">Gestión de categorías de productos</p>
+    </div>
+    <button class="btn btn-primary" (click)="abrirNuevo()">+ Nueva categoría</button>
+  </div>
+
+  <div class="filters">
+    <input class="input" type="text" placeholder="Buscar categoría…" [(ngModel)]="busqueda">
+  </div>
+
+  <div class="card">
+    <div *ngIf="cargando" class="loading">Cargando categorías…</div>
+    <table *ngIf="!cargando" class="table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Nombre</th>
+          <th>Descripción</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let c of categoriasFiltradas">
+          <td><code>{{ c.id }}</code></td>
+          <td><strong>{{ c.nombre }}</strong></td>
+          <td>{{ c.descripcion || '—' }}</td>
+          <td class="actions">
+            <button class="btn-icon" title="Editar" (click)="abrirEdicion(c)">✏️</button>
+            <button class="btn-icon btn-icon--danger" title="Eliminar" (click)="eliminar(c)">🗑</button>
+          </td>
+        </tr>
+        <tr *ngIf="categoriasFiltradas.length === 0">
+          <td colspan="4" class="empty">No hay categorías que coincidan con la búsqueda.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-backdrop" *ngIf="modalAbierto">
+  <div class="modal modal--sm" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>{{ editando ? 'Editar categoría' : 'Nueva categoría' }}</h2>
+      <button class="btn-close" (click)="cerrarModal()">✕</button>
+    </div>
+    <form [formGroup]="form" (ngSubmit)="guardar()" class="modal-body">
+      <div class="form-group">
+        <label>Nombre *</label>
+        <input class="input" formControlName="nombre" placeholder="Ej: Electrónica">
+        <span *ngIf="isInvalid('nombre')" class="error">El nombre es obligatorio (máx. 100 caracteres).</span>
+      </div>
+      <div class="form-group">
+        <label>Descripción</label>
+        <textarea class="input" formControlName="descripcion" rows="3"
+                  placeholder="Descripción opcional de la categoría…"></textarea>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="cerrarModal()">Cancelar</button>
+        <button type="submit" class="btn btn-primary">{{ editando ? 'Guardar cambios' : 'Crear' }}</button>
+      </div>
+    </form>
+  </div>
+</div>

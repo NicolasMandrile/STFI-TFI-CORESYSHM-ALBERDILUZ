@@ -1,0 +1,122 @@
+<div class="dashboard">
+
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Dashboard</h1>
+      <p class="page-subtitle" *ngIf="currentUser$ | async as u">
+        Bienvenido, <strong>{{ u.nombreUsuario }}</strong> &mdash; {{ u.rol }}
+      </p>
+    </div>
+    <span class="page-date">{{ today | date:"EEEE, d 'de' MMMM y" : '' : 'es' }}</span>
+  </div>
+
+  <div *ngIf="cargando" class="loading-dash">Cargando datos…</div>
+
+  <ng-container *ngIf="!cargando">
+
+    <!-- Cards KPI -->
+    <div class="stats-grid">
+      <div class="stat-card stat-card--blue" routerLink="/stock/productos">
+        <div class="stat-info">
+          <span class="stat-value">{{ totalProductos }}</span>
+          <span class="stat-label">Productos activos</span>
+        </div>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+      </div>
+      <div class="stat-card stat-card--red" routerLink="/stock/productos">
+        <div class="stat-info">
+          <span class="stat-value">{{ stockBajoCount }}</span>
+          <span class="stat-label">Productos con stock bajo</span>
+        </div>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      </div>
+      <div class="stat-card stat-card--green" routerLink="/ventas">
+        <div class="stat-info">
+          <span class="stat-value">{{ ventasHoy }}</span>
+          <span class="stat-label">Ventas hoy — $ {{ totalVentasHoy | number:'1.0-0' }}</span>
+        </div>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+      </div>
+      <div class="stat-card stat-card--purple" routerLink="/compras">
+        <div class="stat-info">
+          <span class="stat-value">$ {{ totalComprasMes | number:'1.0-0' }}</span>
+          <span class="stat-label">Compras este mes</span>
+        </div>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+      </div>
+    </div>
+
+    <!-- Grid inferior -->
+    <div class="bottom-grid">
+
+      <!-- Acciones rápidas -->
+      <div class="panel">
+        <h3 class="panel-title">Acciones rápidas</h3>
+        <div class="quick-actions">
+          <a routerLink="/ventas/nueva" class="qa-btn qa-btn--primary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+            Nueva Venta
+          </a>
+          <a routerLink="/compras/nueva" class="qa-btn qa-btn--green">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/></svg>
+            Nueva Compra
+          </a>
+          <a routerLink="/stock/productos" class="qa-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Nuevo Producto
+          </a>
+          <a routerLink="/stock/movimientos" class="qa-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Ver movimientos
+          </a>
+        </div>
+      </div>
+
+      <!-- Stock bajo -->
+      <div class="panel" *ngIf="productosStockBajo.length > 0">
+        <h3 class="panel-title">⚠ Productos con stock bajo</h3>
+        <ul class="stock-list">
+          <li *ngFor="let p of productosStockBajo" class="stock-item">
+            <div>
+              <span class="stock-nombre">{{ p.nombre }}</span>
+              <span class="stock-code">{{ p.codigo }}</span>
+            </div>
+            <span class="stock-badge">{{ p.stockActual }} / mín {{ p.stockMinimo }}</span>
+          </li>
+        </ul>
+        <a routerLink="/stock/productos" class="ver-mas">Ver todos →</a>
+      </div>
+
+      <!-- Últimas ventas -->
+      <div class="panel">
+        <h3 class="panel-title">Últimas ventas</h3>
+        <ul class="activity-list">
+          <li *ngFor="let v of ultimasVentas" class="activity-item">
+            <div class="activity-dot" [class.dot-ok]="v.estado === 'Confirmada'" [class.dot-bad]="v.estado === 'Anulada'"></div>
+            <div class="activity-body">
+              <span class="activity-text">{{ v.clienteNombre }} — <strong>$ {{ v.total | number:'1.0-0' }}</strong></span>
+              <span class="activity-time">{{ v.numeroVenta }} · {{ v.fecha | date:'dd/MM HH:mm':'es' }}</span>
+            </div>
+          </li>
+          <li *ngIf="ultimasVentas.length === 0" class="activity-empty">Sin ventas aún.</li>
+        </ul>
+      </div>
+
+      <!-- Últimos movimientos -->
+      <div class="panel">
+        <h3 class="panel-title">Últimos movimientos de stock</h3>
+        <ul class="activity-list">
+          <li *ngFor="let m of ultimosMovimientos" class="activity-item">
+            <div class="activity-dot"></div>
+            <div class="activity-body">
+              <span class="activity-text">{{ m.productoNombre }} — {{ tipoMovLabel(m.tipoMovimiento) }} <strong>{{ m.cantidad }}</strong></span>
+              <span class="activity-time">{{ m.fechaCreacion | date:'dd/MM HH:mm':'es' }}</span>
+            </div>
+          </li>
+          <li *ngIf="ultimosMovimientos.length === 0" class="activity-empty">Sin movimientos aún.</li>
+        </ul>
+      </div>
+
+    </div>
+  </ng-container>
+</div>

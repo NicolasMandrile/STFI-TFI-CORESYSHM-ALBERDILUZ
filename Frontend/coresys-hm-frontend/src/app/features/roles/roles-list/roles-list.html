@@ -1,0 +1,87 @@
+<div class="roles">
+  <div class="roles-header">
+    <h1>Roles y grupos de acciones</h1>
+    <button class="btn-primary" (click)="abrirCrear()">+ Nuevo rol</button>
+  </div>
+
+  <p class="mensaje-error" *ngIf="error">{{ error }}</p>
+
+  <table class="tabla" *ngIf="!cargando; else loadingTpl">
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>Descripción</th>
+        <th>Estado</th>
+        <th>Usuarios</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let r of roles">
+        <td>
+          {{ r.name }}
+          <span class="badge badge--sistema" *ngIf="r.isSystem">Acceso total</span>
+          <span class="badge badge--protegido" *ngIf="r.isSeeded && !r.isSystem">Protegido</span>
+        </td>
+        <td>{{ r.description }}</td>
+        <td>
+          <span class="badge" [class.badge--ok]="r.isActive" [class.badge--off]="!r.isActive">
+            {{ r.isActive ? 'Activo' : 'Inactivo' }}
+          </span>
+        </td>
+        <td>{{ r.cantidadUsuarios }}</td>
+        <td class="acciones">
+          <button *ngIf="!r.isSystem" (click)="abrirEditar(r)">Ver / Editar</button>
+          <button *ngIf="r.isSystem" (click)="abrirEditar(r)" title="Rol de sistema: acceso total, solo lectura">Ver acciones</button>
+          <button *ngIf="!r.isSystem && !r.isSeeded" (click)="eliminar(r)" [disabled]="r.cantidadUsuarios > 0">Eliminar</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <ng-template #loadingTpl><p>Cargando...</p></ng-template>
+
+  <div class="modal-overlay" *ngIf="mostrarForm">
+    <div class="modal">
+      <h2>{{ soloLectura ? 'Acciones del rol: ' + editandoNombre : (editandoId ? 'Grupo de acciones: ' + editandoNombre : 'Nuevo rol') }}</h2>
+      <p class="mensaje-info" *ngIf="soloLectura">
+        Administrador es un rol de sistema: siempre tiene acceso total a todas las acciones, sin importar esta lista. No es editable.
+      </p>
+      <form [formGroup]="form" (ngSubmit)="guardar()">
+        <label>
+          Nombre
+          <input formControlName="name" [readonly]="editandoIsSeeded || !!editandoId" />
+        </label>
+        <label>
+          Descripción
+          <input formControlName="description" />
+        </label>
+        <label class="checkbox-inline">
+          <input type="checkbox" formControlName="isActive" /> Activo
+        </label>
+
+        <h3>Permisos</h3>
+        <div class="permisos-categorias">
+          <div class="categoria" *ngFor="let cat of categorias">
+            <strong>{{ labelCategoria(cat.nombre) }}</strong>
+            <label class="checkbox-inline" *ngFor="let clave of cat.claves" [title]="clave">
+              <input type="checkbox"
+                     [checked]="permisosSeleccionados.has(clave)"
+                     [disabled]="soloLectura"
+                     (change)="togglePermiso(clave)" />
+              {{ labelPermiso(clave) }}
+            </label>
+          </div>
+        </div>
+
+        <p class="mensaje-error" *ngIf="formError">{{ formError }}</p>
+
+        <div class="modal-actions">
+          <button type="button" (click)="cancelar()">Cerrar</button>
+          <button type="submit" class="btn-primary" [disabled]="guardando" *ngIf="!soloLectura">
+            {{ guardando ? 'Guardando...' : 'Guardar' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

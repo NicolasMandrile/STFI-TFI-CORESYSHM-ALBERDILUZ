@@ -1,0 +1,46 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Movimientos de stock</h1>
+      <p class="page-subtitle">Historial de entradas, salidas y ajustes</p>
+    </div>
+  </div>
+
+  <div class="filters">
+    <input class="input" type="text" placeholder="Buscar producto o tipo…" [(ngModel)]="busqueda">
+  </div>
+
+  <div class="card">
+    <div *ngIf="cargando" class="loading">Cargando movimientos…</div>
+    <table *ngIf="!cargando" class="table">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Producto</th>
+          <th>Tipo</th>
+          <th>Cantidad</th>
+          <th>Stock ant.</th>
+          <th>Stock post.</th>
+          <th>Observación</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let m of movimientosFiltrados">
+          <td>{{ m.fechaCreacion | date:'dd/MM/yyyy HH:mm':'es' }}</td>
+          <td>
+            <strong>{{ m.productoNombre }}</strong><br>
+            <small class="text-muted">{{ m.productoCodigo }}</small>
+          </td>
+          <td><span class="tag" [ngClass]="tipoClass(m.tipoMovimiento)">{{ tipoLabel(m.tipoMovimiento) }}</span></td>
+          <td class="text-center">{{ m.cantidad }}</td>
+          <td class="text-center text-muted">{{ m.stockAnterior }}</td>
+          <td class="text-center"><strong>{{ m.stockPosterior }}</strong></td>
+          <td class="text-muted">{{ m.observacion || '—' }}</td>
+        </tr>
+        <tr *ngIf="movimientosFiltrados.length === 0">
+          <td colspan="7" class="empty">Sin movimientos registrados.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

@@ -1,0 +1,47 @@
+<div class="auditoria">
+  <h1>Auditoría de accesos</h1>
+
+  <div class="filtros">
+    <input type="number" placeholder="ID de usuario" [(ngModel)]="filtroUsuarioId" />
+    <select [(ngModel)]="filtroAccion">
+      <option value="">Todas las acciones</option>
+      <option *ngFor="let a of acciones" [value]="a">{{ a }}</option>
+    </select>
+    <input type="date" [(ngModel)]="filtroFechaDesde" />
+    <input type="date" [(ngModel)]="filtroFechaHasta" />
+    <button (click)="aplicarFiltros()">Filtrar</button>
+  </div>
+
+  <table class="tabla" *ngIf="!cargando; else loadingTpl">
+    <thead>
+      <tr>
+        <th>Fecha</th>
+        <th>Usuario</th>
+        <th>Rol</th>
+        <th>Acción</th>
+        <th>IP</th>
+        <th>Detalle</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let r of registros">
+        <td>{{ r.timestamp | date:'short' }}</td>
+        <td>{{ r.usuarioNombre ?? r.usuarioEmail ?? ('#' + r.usuarioId) }}</td>
+        <td>{{ r.rolSnapshot ?? '-' }}</td>
+        <td>{{ r.accion }}</td>
+        <td>{{ r.ip ?? '-' }}</td>
+        <td>{{ r.detalle ?? '-' }}</td>
+      </tr>
+      <tr *ngIf="registros.length === 0">
+        <td colspan="6" class="sin-datos">No hay registros para los filtros aplicados.</td>
+      </tr>
+    </tbody>
+  </table>
+  <ng-template #loadingTpl><p>Cargando...</p></ng-template>
+
+  <div class="paginacion" *ngIf="totalPaginas > 1">
+    <button (click)="irAPagina(pagina - 1)" [disabled]="pagina <= 1">Anterior</button>
+    <span>Página {{ pagina }} de {{ totalPaginas }}</span>
+    <button (click)="irAPagina(pagina + 1)" [disabled]="pagina >= totalPaginas">Siguiente</button>
+  </div>
+</div>

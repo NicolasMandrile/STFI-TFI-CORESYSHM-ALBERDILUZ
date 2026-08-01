@@ -1,0 +1,88 @@
+.page { padding: 24px; }
+
+.alert {
+  display: flex; gap: 12px; padding: 14px 16px; border-radius: 10px; margin-bottom: 20px;
+
+  &-warn {
+    background: #fffbeb; border: 1px solid #f59e0b;
+    .alert-icon { font-size: 20px; flex-shrink: 0; line-height: 1.4; }
+    .alert-body {
+      font-size: 14px; color: #78350f;
+      strong { display: block; font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+      p { margin: 0 0 8px; }
+      ul { margin: 0; padding-left: 18px;
+        li { margin-bottom: 2px; }
+        code { background: #fde68a; padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+      }
+    }
+  }
+}
+
+.page-header {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  margin-bottom: 24px;
+}
+.page-title   { font-size: 24px; font-weight: 700; color: #111827; margin: 0; }
+.page-subtitle { font-size: 14px; color: #6b7280; margin: 4px 0 0; }
+
+.filters {
+  display: flex; flex-wrap: wrap; gap: 16px; align-items: center; margin-bottom: 16px;
+  .input { width: 300px; }
+}
+.check-label { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+
+.card { background: #fff; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,.08); overflow: hidden; }
+
+.table {
+  width: 100%; border-collapse: collapse;
+  th { background: #f9fafb; padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: .05em; border-bottom: 1px solid #e5e7eb; }
+  td { padding: 12px 16px; font-size: 14px; color: #374151; border-bottom: 1px solid #f3f4f6; }
+  tr:last-child td { border-bottom: none; }
+  .text-center { text-align: center; }
+  code { background: #f3f4f6; padding: 2px 6px; border-radius: 4px; font-size: 12px; }
+}
+
+.row-warn { background: #fffbeb; }
+
+.stock-badge {
+  display: inline-block; padding: 2px 8px; border-radius: 9999px; font-size: 12px; font-weight: 500;
+  &.stock-ok  { background: #d1fae5; color: #065f46; }
+  &.stock-low { background: #fee2e2; color: #991b1b; }
+}
+
+.badge { display: inline-block; padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-weight: 600; }
+.badge-warn { background: #fef3c7; color: #92400e; }
+
+.actions { display: flex; gap: 8px; }
+.btn-icon { background: none; border: none; cursor: pointer; font-size: 16px; padding: 4px; border-radius: 4px;
+  &:hover { background: #f3f4f6; }
+  &--danger:hover { background: #fee2e2; }
+}
+
+.empty { text-align: center; color: #9ca3af; padding: 32px !important; }
+.loading { padding: 32px; text-align: center; color: #6b7280; }
+
+// Botones
+.btn { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; border: none; transition: background .15s; }
+.btn-primary { background: #4f46e5; color: #fff; &:hover { background: #4338ca; } }
+.btn-secondary { background: #f3f4f6; color: #374151; &:hover { background: #e5e7eb; } }
+.btn-close { background: none; border: none; font-size: 20px; cursor: pointer; color: #6b7280; &:hover { color: #111; } }
+
+// Input
+.input { width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; outline: none; box-sizing: border-box;
+  &:focus { border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79,70,229,.15); }
+}
+
+// Forms
+.form-group { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; label { font-size: 13px; font-weight: 500; color: #374151; } }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.error { font-size: 12px; color: #dc2626; }
+
+// Modal
+.modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.4); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 16px; }
+.modal { background: #fff; border-radius: 16px; width: 100%; max-width: 560px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,.2); &--sm { max-width: 400px; } }
+.modal-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-bottom: 1px solid #e5e7eb; h2 { font-size: 18px; font-weight: 600; margin: 0; } }
+.modal-body { padding: 24px; }
+.modal-footer { display: flex; justify-content: flex-end; gap: 12px; padding-top: 16px; border-top: 1px solid #f3f4f6; margin-top: 8px; }
+
+.stock-actual { font-size: 14px; color: #374151; margin-bottom: 16px; strong { font-size: 18px; color: #4f46e5; } }

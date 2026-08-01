@@ -1,0 +1,217 @@
+<div class="page">
+
+  <!-- Encabezado -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Reportes de ventas</h1>
+      <p class="page-subtitle">Análisis y estadísticas del módulo de ventas</p>
+    </div>
+    <button class="btn btn-outline" (click)="exportarCSV()" title="Exportar a CSV">
+      ⬇ Exportar CSV
+    </button>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button *ngFor="let t of tabs"
+            class="tab" [class.tab--active]="tabActiva === t.id"
+            (click)="cambiarTab(t.id)">
+      {{ t.label }}
+    </button>
+  </div>
+
+  <!-- Panel de filtros -->
+  <div class="filters-card">
+    <form [formGroup]="form" class="filters-form">
+      <div class="filter-group">
+        <label>Desde</label>
+        <input class="input" type="date" formControlName="desde">
+      </div>
+      <div class="filter-group">
+        <label>Hasta</label>
+        <input class="input" type="date" formControlName="hasta">
+      </div>
+
+      <div class="filter-group" *ngIf="tabActiva !== 'ticket' && tabActiva !== 'periodo'">
+        <label>Top N</label>
+        <input class="input input--sm" type="number" formControlName="topN" min="1" max="50">
+      </div>
+
+      <div class="filter-group" *ngIf="tabActiva === 'productos'">
+        <label>Ordenar por</label>
+        <select class="input input--sm" formControlName="ordenarPor">
+          <option value="cantidad">Cantidad</option>
+          <option value="monto">Monto</option>
+        </select>
+      </div>
+
+      <div class="filter-group" *ngIf="tabActiva === 'periodo'">
+        <label>Granularidad</label>
+        <select class="input input--sm" formControlName="granularidad">
+          <option *ngFor="let g of granularidades" [value]="g.value">{{ g.label }}</option>
+        </select>
+      </div>
+
+      <button type="button" class="btn btn-primary" (click)="cargar()" [disabled]="cargando">
+        {{ cargando ? 'Cargando…' : 'Aplicar' }}
+      </button>
+    </form>
+  </div>
+
+  <!-- Estado: error -->
+  <div *ngIf="error" class="alert alert-error">{{ error }}</div>
+
+  <!-- Estado: cargando -->
+  <div *ngIf="cargando" class="loading-state">Generando reporte…</div>
+
+  <!-- ── REPORTE 1: Productos más vendidos ─────────────────────────────── -->
+  <ng-container *ngIf="!cargando && tabActiva === 'productos'">
+    <div *ngIf="productosVendidos.length === 0" class="empty-state">Sin datos para el período seleccionado.</div>
+    <div class="card" *ngIf="productosVendidos.length > 0">
+      <table class="table">
+        <thead>
+          <tr>
+            <th class="rank">#</th>
+            <th>Código</th>
+            <th>Producto</th>
+            <th class="text-right">Cant. vendida</th>
+            <th class="text-right">Total facturado</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let p of productosVendidos; let i = index">
+            <td class="rank">{{ i + 1 }}</td>
+            <td><code>{{ p.codigo }}</code></td>
+            <td>{{ p.nombre }}</td>
+            <td class="text-right"><strong>{{ p.cantidadVendida }}</strong></td>
+            <td class="text-right text-primary">$ {{ p.totalFacturado | number:'1.2-2' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </ng-container>
+
+  <!-- ── REPORTE 2: Ventas por período ──────────────────────────────────── -->
+  <ng-container *ngIf="!cargando && tabActiva === 'periodo'">
+    <div *ngIf="ventasPeriodo.length === 0" class="empty-state">Sin datos para el período seleccionado.</div>
+    <ng-container *ngIf="ventasPeriodo.length > 0">
+      <div class="card chart-card">
+        <canvas #chartCanvas></canvas>
+      </div>
+      <div class="card">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Período</th>
+              <th class="text-right">Cant. ventas</th>
+              <th class="text-right">Total facturado</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let p of ventasPeriodo">
+              <td>{{ p.periodo }}</td>
+              <td class="text-right">{{ p.cantidadVentas }}</td>
+              <td class="text-right text-primary">$ {{ p.totalFacturado | number:'1.2-2' }}</td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr class="total-row">
+              <td><strong>Total</strong></td>
+              <td class="text-right"><strong>{{ ventasPeriodo | sumProp:'cantidadVentas' }}</strong></td>
+              <td class="text-right text-primary"><strong>$ {{ ventasPeriodo | sumProp:'totalFacturado' | number:'1.2-2' }}</strong></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </ng-container>
+  </ng-container>
+
+  <!-- ── REPORTE 3: Ranking de clientes ─────────────────────────────────── -->
+  <ng-container *ngIf="!cargando && tabActiva === 'clientes'">
+    <div *ngIf="rankingClientes.length === 0" class="empty-state">Sin datos para el período seleccionado.</div>
+    <div class="card" *ngIf="rankingClientes.length > 0">
+      <table class="table">
+        <thead>
+          <tr>
+            <th class="rank">#</th>
+            <th>Cliente</th>
+            <th class="text-right">Compras</th>
+            <th class="text-right">Monto total</th>
+            <th class="text-right">Ticket promedio</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let c of rankingClientes; let i = index">
+            <td class="rank">{{ i + 1 }}</td>
+            <td>{{ c.apellido }}, {{ c.nombre }}</td>
+            <td class="text-right">{{ c.cantidadCompras }}</td>
+            <td class="text-right text-primary">$ {{ c.montoTotal | number:'1.2-2' }}</td>
+            <td class="text-right">$ {{ c.ticketPromedio | number:'1.2-2' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </ng-container>
+
+  <!-- ── REPORTE 4: Ticket promedio ─────────────────────────────────────── -->
+  <ng-container *ngIf="!cargando && tabActiva === 'ticket'">
+    <div *ngIf="!ticketPromedio || ticketPromedio.cantidadVentas === 0" class="empty-state">
+      Sin ventas confirmadas en el período seleccionado.
+    </div>
+    <div class="kpi-grid" *ngIf="ticketPromedio && ticketPromedio.cantidadVentas > 0">
+      <div class="kpi-card">
+        <div class="kpi-label">Ventas confirmadas</div>
+        <div class="kpi-value">{{ ticketPromedio.cantidadVentas }}</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Total facturado</div>
+        <div class="kpi-value text-primary">$ {{ ticketPromedio.totalFacturado | number:'1.2-2' }}</div>
+      </div>
+      <div class="kpi-card kpi-card--highlight">
+        <div class="kpi-label">Ticket promedio</div>
+        <div class="kpi-value">$ {{ ticketPromedio.ticketPromedio | number:'1.2-2' }}</div>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- ── REPORTE 5: Margen por producto ─────────────────────────────────── -->
+  <ng-container *ngIf="!cargando && tabActiva === 'margen'">
+    <div *ngIf="margenProductos.length === 0" class="empty-state">Sin datos para el período seleccionado.</div>
+    <div class="card" *ngIf="margenProductos.length > 0">
+      <table class="table">
+        <thead>
+          <tr>
+            <th class="rank">#</th>
+            <th>Código</th>
+            <th>Producto</th>
+            <th class="text-right">Cant.</th>
+            <th class="text-right">Ingreso</th>
+            <th class="text-right">Costo</th>
+            <th class="text-right">Margen $</th>
+            <th class="text-right">Margen %</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let m of margenProductos; let i = index"
+              [class.row-negative]="m.margenTotal < 0">
+            <td class="rank">{{ i + 1 }}</td>
+            <td><code>{{ m.codigo }}</code></td>
+            <td>{{ m.nombre }}</td>
+            <td class="text-right">{{ m.cantidadVendida }}</td>
+            <td class="text-right">$ {{ m.ingresoTotal | number:'1.2-2' }}</td>
+            <td class="text-right">$ {{ m.costoTotal | number:'1.2-2' }}</td>
+            <td class="text-right" [class.text-primary]="m.margenTotal >= 0" [class.text-danger]="m.margenTotal < 0">
+              $ {{ m.margenTotal | number:'1.2-2' }}
+            </td>
+            <td class="text-right">
+              <span class="pct-badge" [class.pct-pos]="m.margenPorcentual >= 0" [class.pct-neg]="m.margenPorcentual < 0">
+                {{ m.margenPorcentual | number:'1.1-1' }}%
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </ng-container>
+
+</div>

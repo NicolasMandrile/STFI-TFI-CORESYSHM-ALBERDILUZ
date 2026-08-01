@@ -1,0 +1,246 @@
+// ─── Variables ────────────────────────────────────────────────────────────────
+$primary:   #4f46e5;
+$primary-h: #4338ca;
+$danger:    #ef4444;
+$text:      #1e293b;
+$muted:     #64748b;
+$border:    #e2e8f0;
+$bg-field:  #f8fafc;
+$radius:    12px;
+
+// ─── Page layout ─────────────────────────────────────────────────────────────
+.login-page {
+  display: flex;
+  min-height: 100vh;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+// ─── Brand panel (izquierdo) ─────────────────────────────────────────────────
+.login-brand {
+  flex: 1;
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 60%, #a855f7 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+
+  @media (max-width: 768px) { display: none; }
+}
+
+.brand-content {
+  color: #fff;
+  max-width: 380px;
+}
+
+.brand-logo {
+  margin-bottom: 1.5rem;
+  svg { filter: drop-shadow(0 4px 12px rgba(0,0,0,.25)); }
+}
+
+.brand-name {
+  font-size: 2.5rem;
+  font-weight: 800;
+  letter-spacing: -1px;
+  margin: 0 0 .5rem;
+  span { color: #c4b5fd; }
+}
+
+.brand-desc {
+  font-size: 1.1rem;
+  opacity: .85;
+  margin: 0 0 2.5rem;
+}
+
+.brand-features {
+  display: flex;
+  flex-direction: column;
+  gap: .9rem;
+}
+
+.feature-item {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  font-size: .95rem;
+  opacity: .9;
+
+  .feature-icon {
+    width: 36px; height: 36px;
+    background: rgba(255,255,255,.15);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+  }
+}
+
+// ─── Form panel (derecho) ────────────────────────────────────────────────────
+.login-form-panel {
+  width: 480px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: #fff;
+
+  @media (max-width: 768px) { width: 100%; }
+}
+
+.login-card {
+  width: 100%;
+  max-width: 380px;
+}
+
+.login-header {
+  margin-bottom: 2rem;
+
+  h2 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: $text;
+    margin: 0 0 .4rem;
+  }
+
+  p {
+    color: $muted;
+    margin: 0;
+    font-size: .95rem;
+  }
+}
+
+// ─── Campo de formulario ─────────────────────────────────────────────────────
+.field {
+  margin-bottom: 1.25rem;
+
+  label {
+    display: block;
+    font-size: .85rem;
+    font-weight: 600;
+    color: $text;
+    margin-bottom: .5rem;
+  }
+
+  &--error {
+    .input-wrapper { border-color: $danger !important; }
+    input { color: $danger; }
+  }
+}
+
+.input-wrapper {
+  display: flex;
+  align-items: center;
+  border: 1.5px solid $border;
+  border-radius: $radius;
+  background: $bg-field;
+  transition: border-color .2s, box-shadow .2s;
+
+  &:focus-within {
+    border-color: $primary;
+    box-shadow: 0 0 0 3px rgba($primary, .12);
+    background: #fff;
+  }
+}
+
+.input-icon {
+  padding: 0 .75rem 0 .85rem;
+  color: $muted;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: .7rem .5rem;
+  font-size: .95rem;
+  color: $text;
+  outline: none;
+  min-width: 0;
+
+  &::placeholder { color: #94a3b8; }
+}
+
+.btn-eye {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0 .85rem;
+  color: $muted;
+  display: flex;
+  align-items: center;
+  &:hover { color: $text; }
+}
+
+// ─── Mensajes de error ───────────────────────────────────────────────────────
+.field-error {
+  display: block;
+  font-size: .78rem;
+  color: $danger;
+  margin-top: .35rem;
+}
+
+.alert-error {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  border-radius: $radius;
+  padding: .7rem 1rem;
+  font-size: .88rem;
+  margin-bottom: 1.25rem;
+}
+
+// ─── Botón submit ────────────────────────────────────────────────────────────
+.btn-submit {
+  width: 100%;
+  padding: .8rem;
+  background: $primary;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: $radius;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .6rem;
+  transition: background .2s, transform .1s, box-shadow .2s;
+  box-shadow: 0 4px 14px rgba($primary, .35);
+
+  &:hover:not(:disabled) {
+    background: $primary-h;
+    box-shadow: 0 6px 18px rgba($primary, .45);
+    transform: translateY(-1px);
+  }
+
+  &:active:not(:disabled) { transform: translateY(0); }
+
+  &:disabled {
+    opacity: .7;
+    cursor: not-allowed;
+  }
+}
+
+// ─── Spinner ─────────────────────────────────────────────────────────────────
+.spinner {
+  width: 18px; height: 18px;
+  border: 2px solid rgba(#fff, .35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+// ─── Footer ──────────────────────────────────────────────────────────────────
+.login-footer {
+  text-align: center;
+  color: #94a3b8;
+  font-size: .78rem;
+  margin-top: 2rem;
+}

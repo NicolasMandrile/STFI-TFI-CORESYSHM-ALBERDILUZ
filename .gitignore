@@ -1,0 +1,38 @@
+## .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+*.swp
+.idea/
+TestResults/
+*.nupkg
+*.snupkg
+artifacts/
+
+## Angular / Node
+node_modules/
+dist/
+.angular/
+*.js.map
+npm-debug.log*
+yarn-debug.log*
+
+## Entornos y secretos
+appsettings.Production.json
+.env
+.env.local
+*.pfx
+*.p12
+secrets.json
+
+## OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+## SQL
+*.bak
+*.mdf
+*.ldf

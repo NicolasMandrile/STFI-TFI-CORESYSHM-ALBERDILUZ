@@ -1,0 +1,192 @@
+<div class="page">
+  <!-- Encabezado -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Productos</h1>
+      <p class="page-subtitle">Gestión de inventario y catálogo de productos</p>
+    </div>
+    <button class="btn btn-primary" (click)="abrirNuevo()">+ Nuevo producto</button>
+  </div>
+
+  <!-- Advertencia: productos con categoría inválida -->
+  <div class="alert alert-warn" *ngIf="productosConCategoriaInvalida.length > 0">
+    <div class="alert-icon">⚠️</div>
+    <div class="alert-body">
+      <strong>Categoría inexistente detectada</strong>
+      <p>Los siguientes productos tienen asignada una categoría que ya no existe en el sistema. Editá cada uno para corregirlo.</p>
+      <ul>
+        <li *ngFor="let p of productosConCategoriaInvalida">
+          <code>{{ p.codigo }}</code> — {{ p.nombre }}
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <div class="filters">
+    <input class="input" type="text" placeholder="Buscar por nombre o código…"
+           [(ngModel)]="busqueda">
+    <select class="input" [(ngModel)]="categoriaFiltro">
+      <option value="">Todas las categorías</option>
+      <option *ngFor="let c of categorias" [value]="c.id">{{ c.nombre }}</option>
+    </select>
+    <select class="input" [(ngModel)]="proveedorFiltro">
+      <option value="">Todos los proveedores</option>
+      <option *ngFor="let pv of proveedores" [value]="pv.id">{{ pv.razonSocial }}</option>
+    </select>
+    <label class="check-label">
+      <input type="checkbox" [(ngModel)]="soloStockBajo">
+      <span class="badge badge-warn">Stock bajo</span>
+    </label>
+  </div>
+
+  <!-- Tabla -->
+  <div class="card">
+    <div *ngIf="cargando" class="loading">Cargando productos…</div>
+    <table *ngIf="!cargando" class="table">
+      <thead>
+        <tr>
+          <th>Código</th>
+          <th>Nombre</th>
+          <th>Categoría</th>
+          <th>Stock</th>
+          <th>P. Compra</th>
+          <th>P. Venta</th>
+          <th>Proveedor</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let p of productosFiltrados" [class.row-warn]="p.stockBajo">
+          <td><code>{{ p.codigo }}</code></td>
+          <td>
+            {{ p.nombre }}
+            <span *ngIf="p.stockBajo" class="badge badge-warn">Stock bajo</span>
+          </td>
+          <td>{{ p.categoriaNombre }}</td>
+          <td class="text-center">
+            <span class="stock-badge" [class.stock-ok]="!p.stockBajo" [class.stock-low]="p.stockBajo">
+              {{ p.stockActual }} / mín {{ p.stockMinimo }}
+            </span>
+          </td>
+          <td>$ {{ p.precioCompra | number:'1.2-2' }}</td>
+          <td>$ {{ p.precioVenta | number:'1.2-2' }}</td>
+          <td>{{ p.proveedorNombre || '—' }}</td>
+          <td class="actions">
+            <button class="btn-icon" title="Ajustar stock" (click)="abrirAjusteStock(p)">📦</button>
+            <button class="btn-icon" title="Editar" (click)="abrirEdicion(p)">✏️</button>
+            <button class="btn-icon btn-icon--danger" title="Eliminar" (click)="eliminar(p)">🗑</button>
+          </td>
+        </tr>
+        <tr *ngIf="productosFiltrados.length === 0">
+          <td colspan="8" class="empty">No hay productos que coincidan con la búsqueda.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal Producto -->
+<div class="modal-backdrop" *ngIf="modalAbierto">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>{{ editando ? 'Editar producto' : 'Nuevo producto' }}</h2>
+      <button class="btn-close" (click)="cerrarModal()">✕</button>
+    </div>
+    <form [formGroup]="form" (ngSubmit)="guardar()" class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Código *</label>
+          <input class="input" formControlName="codigo" placeholder="ELEC-001">
+          <span *ngIf="isInvalid('codigo')" class="error">El código es obligatorio.</span>
+        </div>
+        <div class="form-group">
+          <label>Nombre *</label>
+          <input class="input" formControlName="nombre" placeholder="Nombre del producto">
+          <span *ngIf="isInvalid('nombre')" class="error">El nombre es obligatorio.</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Descripción</label>
+        <textarea class="input" formControlName="descripcion" rows="2"></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Precio compra *</label>
+          <input class="input" type="number" formControlName="precioCompra" min="0" step="0.01">
+          <span *ngIf="isInvalid('precioCompra')" class="error">Precio requerido.</span>
+        </div>
+        <div class="form-group">
+          <label>Precio venta *</label>
+          <input class="input" type="number" formControlName="precioVenta" min="0" step="0.01">
+          <span *ngIf="isInvalid('precioVenta')" class="error">Precio requerido.</span>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group" *ngIf="!editando">
+          <label>Stock inicial *</label>
+          <input class="input" type="number" formControlName="stockActual" min="0">
+        </div>
+        <div class="form-group">
+          <label>Stock mínimo *</label>
+          <input class="input" type="number" formControlName="stockMinimo" min="0">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Categoría *</label>
+          <select class="input" formControlName="categoriaId">
+            <option value="">— Seleccionar —</option>
+            <option *ngFor="let c of categorias" [value]="c.id">{{ c.nombre }}</option>
+          </select>
+          <span *ngIf="isInvalid('categoriaId')" class="error">Seleccione una categoría.</span>
+        </div>
+        <div class="form-group">
+          <label>Proveedor</label>
+          <select class="input" formControlName="proveedorId">
+            <option value="">— Sin proveedor —</option>
+            <option *ngFor="let pv of proveedores" [value]="pv.id">{{ pv.razonSocial }}</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="cerrarModal()">Cancelar</button>
+        <button type="submit" class="btn btn-primary">{{ editando ? 'Guardar cambios' : 'Crear producto' }}</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal ajuste stock -->
+<div class="modal-backdrop" *ngIf="modalStock">
+  <div class="modal modal--sm" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Ajustar stock — {{ productoSeleccionado?.nombre }}</h2>
+      <button class="btn-close" (click)="modalStock = false">✕</button>
+    </div>
+    <form [formGroup]="stockForm" (ngSubmit)="registrarMovimiento()" class="modal-body">
+      <p class="stock-actual">Stock actual: <strong>{{ productoSeleccionado?.stockActual }}</strong></p>
+      <div class="form-group">
+        <label>Tipo de movimiento *</label>
+        <select class="input" formControlName="tipoMovimiento">
+          <option *ngFor="let t of tiposMovimiento" [value]="t.value">{{ t.label }}</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Cantidad *</label>
+        <input class="input" type="number" formControlName="cantidad" min="1">
+        <span *ngIf="stockForm.get('cantidad')?.invalid && stockForm.get('cantidad')?.touched" class="error">
+          Cantidad debe ser mayor a 0.
+        </span>
+      </div>
+      <div class="form-group">
+        <label>Observación</label>
+        <textarea class="input" formControlName="observacion" rows="2" placeholder="Motivo del ajuste…"></textarea>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="modalStock = false">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Registrar</button>
+      </div>
+    </form>
+  </div>
+</div>

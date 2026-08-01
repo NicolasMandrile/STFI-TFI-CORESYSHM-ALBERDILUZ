@@ -1,0 +1,44 @@
+<div class="perfil">
+  <h1>Mi Perfil</h1>
+
+  <ng-container *ngIf="!cargando && usuario">
+    <section class="perfil-card">
+      <h2>Mis datos</h2>
+      <dl>
+        <dt>Nombre</dt>
+        <dd>{{ usuario.nombre }} {{ usuario.apellido }}</dd>
+        <dt>Usuario</dt>
+        <dd>{{ usuario.nombreUsuario }}</dd>
+        <dt>Email</dt>
+        <dd>{{ usuario.email }}</dd>
+        <dt>Rol</dt>
+        <dd>{{ usuario.rol }}</dd>
+        <dt>Último acceso</dt>
+        <dd>{{ usuario.ultimoAcceso ? (usuario.ultimoAcceso | date:'short') : '-' }}</dd>
+      </dl>
+    </section>
+
+    <section class="perfil-card">
+      <h2>Cambiar contraseña</h2>
+      <form [formGroup]="form" (ngSubmit)="cambiarPassword()">
+        <label>
+          Contraseña actual
+          <input type="password" formControlName="passwordActual" />
+        </label>
+        <label>
+          Contraseña nueva
+          <input type="password" formControlName="passwordNueva" />
+        </label>
+
+        <p class="mensaje-ok" *ngIf="mensaje">{{ mensaje }}</p>
+        <p class="mensaje-error" *ngIf="error">{{ error }}</p>
+
+        <button type="submit" [disabled]="guardando">
+          {{ guardando ? 'Guardando...' : 'Cambiar contraseña' }}
+        </button>
+      </form>
+    </section>
+  </ng-container>
+
+  <p *ngIf="cargando">Cargando...</p>
+</div>

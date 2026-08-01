@@ -1,0 +1,263 @@
+<div class="page">
+
+  <!-- Encabezado -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Reportes de compras</h1>
+      <p class="page-subtitle">Análisis y estadísticas del módulo de compras</p>
+    </div>
+    <button class="btn btn-outline" (click)="exportarCSV()" title="Exportar a CSV">
+      ⬇ Exportar CSV
+    </button>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button *ngFor="let t of tabs"
+            class="tab" [class.tab--active]="tabActiva === t.id"
+            (click)="cambiarTab(t.id)">
+      {{ t.label }}
+    </button>
+  </div>
+
+  <!-- Panel de filtros -->
+  <div class="filters-card">
+    <form [formGroup]="form" class="filters-form">
+
+      <!-- Rango de fechas (no aplica a Reposición) -->
+      <ng-container *ngIf="tabActiva !== 'reposicion'">
+        <div class="filter-group">
+          <label>Desde</label>
+          <input class="input" type="date" formControlName="desde">
+        </div>
+        <div class="filter-group">
+          <label>Hasta</label>
+          <input class="input" type="date" formControlName="hasta">
+        </div>
+      </ng-container>
+
+      <!-- Top N (rankings y productos) -->
+      <div class="filter-group"
+           *ngIf="tabActiva === 'proveedores' || tabActiva === 'productos'">
+        <label>Top N</label>
+        <input class="input input--sm" type="number" formControlName="topN" min="1" max="50">
+      </div>
+
+      <!-- Granularidad (periodo) -->
+      <div class="filter-group" *ngIf="tabActiva === 'periodo'">
+        <label>Granularidad</label>
+        <select class="input input--sm" formControlName="granularidad">
+          <option *ngFor="let g of granularidades" [value]="g.value">{{ g.label }}</option>
+        </select>
+      </div>
+
+      <!-- Ordenar por (productos) -->
+      <div class="filter-group" *ngIf="tabActiva === 'productos'">
+        <label>Ordenar por</label>
+        <select class="input input--sm" formControlName="ordenarPor">
+          <option value="cantidad">Cantidad</option>
+          <option value="monto">Monto</option>
+        </select>
+      </div>
+
+      <!-- Selector producto (evolución de precio) -->
+      <div class="filter-group" *ngIf="tabActiva === 'evolucion'">
+        <label>Producto <span class="required">*</span></label>
+        <select class="input" formControlName="productoId">
+          <option [value]="null">-- Seleccioná un producto --</option>
+          <option *ngFor="let p of productos" [value]="p.id">
+            [{{ p.codigo }}] {{ p.nombre }}
+          </option>
+        </select>
+      </div>
+
+      <!-- Selector proveedor (reposición) -->
+      <div class="filter-group" *ngIf="tabActiva === 'reposicion'">
+        <label>Proveedor (opcional)</label>
+        <select class="input" formControlName="proveedorId">
+          <option [value]="null">Todos los proveedores</option>
+          <option *ngFor="let pv of proveedores" [value]="pv.id">{{ pv.razonSocial }}</option>
+        </select>
+      </div>
+
+      <button type="button" class="btn btn-primary" (click)="cargar()" [disabled]="cargando">
+        {{ cargando ? 'Cargando…' : 'Aplicar' }}
+      </button>
+    </form>
+  </div>
+
+  <!-- Estado: error -->
+  <div *ngIf="error" class="alert alert-error">{{ error }}</div>
+
+  <!-- Estado: cargando -->
+  <div *ngIf="cargando" class="loading-state">Generando reporte…</div>
+
+  <!-- ── REPORTE 1: Total por período ────────────────────────────────────── -->
+  <ng-container *ngIf="!cargando && tabActiva === 'periodo'">
+    <div *ngIf="comprasPeriodo.length === 0" class="empty-state">Sin datos para el período seleccionado.</div>
+    <ng-container *ngIf="comprasPeriodo.length > 0">
+      <div class="card chart-card">
+        <canvas #chartCanvas></canvas>
+      </div>
+      <div class="card">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Período</th>
+              <th class="text-right">Cant. compras</th>
+              <th class="text-right">Total gastado</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let c of comprasPeriodo">
+              <td>{{ c.periodo }}</td>
+              <td class="text-right">{{ c.cantidadCompras }}</td>
+              <td class="text-right text-orange">$ {{ c.totalGastado | number:'1.2-2' }}</td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr class="total-row">
+              <td><strong>Total</strong></td>
+              <td class="text-right"><strong>{{ sumCompras('cantidadCompras') }}</strong></td>
+              <td class="text-right text-orange"><strong>$ {{ sumCompras('totalGastado') | number:'1.2-2' }}</strong></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </ng-container>
+  </ng-container>
+
+  <!-- ── REPORTE 2: Ranking de proveedores ───────────────────────────────── -->
+  <ng-container *ngIf="!cargando && tabActiva === 'proveedores'">
+    <div *ngIf="rankingProveedores.length === 0" class="empty-state">Sin datos para el período seleccionado.</div>
+    <div class="card" *ngIf="rankingProveedores.length > 0">
+      <table class="table">
+        <thead>
+          <tr>
+            <th class="rank">#</th>
+            <th>Proveedor</th>
+            <th>CUIT</th>
+            <th class="text-right">Compras</th>
+            <th class="text-right">Monto total</th>
+            <th class="text-right">Ticket promedio</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let p of rankingProveedores; let i = index">
+            <td class="rank">{{ i + 1 }}</td>
+            <td><strong>{{ p.razonSocial }}</strong></td>
+            <td><code>{{ p.cuit }}</code></td>
+            <td class="text-right">{{ p.cantidadCompras }}</td>
+            <td class="text-right text-orange">$ {{ p.montoTotal | number:'1.2-2' }}</td>
+            <td class="text-right">$ {{ p.ticketPromedio | number:'1.2-2' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </ng-container>
+
+  <!-- ── REPORTE 3: Productos más comprados ──────────────────────────────── -->
+  <ng-container *ngIf="!cargando && tabActiva === 'productos'">
+    <div *ngIf="productosComprados.length === 0" class="empty-state">Sin datos para el período seleccionado.</div>
+    <div class="card" *ngIf="productosComprados.length > 0">
+      <table class="table">
+        <thead>
+          <tr>
+            <th class="rank">#</th>
+            <th>Código</th>
+            <th>Producto</th>
+            <th class="text-right">Cant. comprada</th>
+            <th class="text-right">Monto total</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let p of productosComprados; let i = index">
+            <td class="rank">{{ i + 1 }}</td>
+            <td><code>{{ p.codigo }}</code></td>
+            <td>{{ p.nombre }}</td>
+            <td class="text-right"><strong>{{ p.cantidadComprada }}</strong></td>
+            <td class="text-right text-orange">$ {{ p.montoTotal | number:'1.2-2' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </ng-container>
+
+  <!-- ── REPORTE 4: Evolución del precio de compra ───────────────────────── -->
+  <ng-container *ngIf="!cargando && tabActiva === 'evolucion'">
+    <div *ngIf="evolucionPrecio.length === 0 && !error" class="empty-state">
+      Seleccioná un producto y aplicá los filtros para ver la evolución del precio.
+    </div>
+    <ng-container *ngIf="evolucionPrecio.length > 0">
+      <div class="card chart-card">
+        <canvas #chartCanvas></canvas>
+      </div>
+      <div class="card">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>N° Compra</th>
+              <th class="text-right">Precio unitario</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let e of evolucionPrecio">
+              <td>{{ e.fecha }}</td>
+              <td><code>{{ e.numeroCompra }}</code></td>
+              <td class="text-right text-orange">$ {{ e.precioUnitario | number:'1.2-2' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </ng-container>
+  </ng-container>
+
+  <!-- ── REPORTE 5: Sugerencia de reposición ─────────────────────────────── -->
+  <ng-container *ngIf="!cargando && tabActiva === 'reposicion'">
+    <div *ngIf="sugerencias.length === 0" class="empty-state">
+      No hay productos que requieran reposición en este momento. ¡Stock al día!
+    </div>
+    <div class="card" *ngIf="sugerencias.length > 0">
+      <div class="reposicion-banner">
+        <span class="badge-alerta">⚠ {{ sugerencias.length }} producto{{ sugerencias.length !== 1 ? 's' : '' }} bajo stock mínimo</span>
+      </div>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Código</th>
+            <th>Producto</th>
+            <th class="text-right">Stock actual</th>
+            <th class="text-right">Stock mínimo</th>
+            <th class="text-right">A reponer</th>
+            <th>Proveedor</th>
+            <th class="text-right">Último precio</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let s of sugerencias"
+              [class.row-critico]="s.stockActual === 0"
+              [class.row-alerta]="s.stockActual > 0">
+            <td><code>{{ s.codigo }}</code></td>
+            <td>{{ s.nombre }}</td>
+            <td class="text-right">
+              <span [class.text-danger]="s.stockActual === 0"
+                    [class.text-warning]="s.stockActual > 0">
+                <strong>{{ s.stockActual }}</strong>
+              </span>
+            </td>
+            <td class="text-right">{{ s.stockMinimo }}</td>
+            <td class="text-right">
+              <span class="badge-diferencia">+{{ s.diferencia }}</span>
+            </td>
+            <td>{{ s.proveedorNombre || '—' }}</td>
+            <td class="text-right">
+              {{ s.ultimoPrecioCompra > 0 ? ('$ ' + (s.ultimoPrecioCompra | number:'1.2-2')) : '—' }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </ng-container>
+
+</div>

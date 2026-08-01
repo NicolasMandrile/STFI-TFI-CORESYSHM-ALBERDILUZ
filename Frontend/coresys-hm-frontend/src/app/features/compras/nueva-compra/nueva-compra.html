@@ -1,0 +1,100 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Nueva compra</h1>
+      <p class="page-subtitle">Registrá una compra a proveedor para actualizar el stock</p>
+    </div>
+  </div>
+
+  <div *ngIf="exito" class="alert alert-success">{{ exito }}</div>
+  <div *ngIf="error" class="alert alert-error">{{ error }}</div>
+
+  <div class="compra-layout">
+    <!-- Catálogo -->
+    <div class="catalogo">
+      <div class="card">
+        <div class="card-header">
+          <h3>Productos</h3>
+          <input class="input" type="text" placeholder="Buscar…" [(ngModel)]="busquedaProducto">
+        </div>
+        <div class="productos-grid">
+          <ng-container *ngIf="proveedorSeleccionado; else sinProveedor">
+            <div class="producto-card" *ngFor="let p of productosFiltrados" (click)="agregarProducto(p)">
+              <div class="producto-codigo">{{ p.codigo }}</div>
+              <div class="producto-nombre">{{ p.nombre }}</div>
+              <div class="producto-stock">Stock actual: <strong>{{ p.stockActual }}</strong></div>
+              <div class="producto-precio">Último costo: $ {{ p.precioCompra | number:'1.2-2' }}</div>
+            </div>
+            <div *ngIf="productosFiltrados.length === 0" class="empty-cat">
+              Este proveedor no tiene productos asignados.
+            </div>
+          </ng-container>
+          <ng-template #sinProveedor>
+            <div class="empty-cat empty-cat--hint">
+              Seleccioná un proveedor para ver sus productos.
+            </div>
+          </ng-template>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel compra -->
+    <div class="compra-panel">
+      <div class="card">
+        <div class="card-header"><h3>Detalle de compra</h3></div>
+
+        <form [formGroup]="compraForm" class="compra-datos">
+          <div class="form-group">
+            <label>Proveedor *</label>
+            <select class="input" formControlName="proveedorId">
+              <option value="">— Seleccionar —</option>
+              <option *ngFor="let pv of proveedores" [value]="pv.id">{{ pv.razonSocial }}</option>
+            </select>
+            <span *ngIf="compraForm.get('proveedorId')?.invalid && compraForm.get('proveedorId')?.touched" class="error">
+              Seleccione un proveedor.
+            </span>
+          </div>
+          <div class="form-group">
+            <label>Observaciones</label>
+            <textarea class="input" formControlName="observaciones" rows="2"></textarea>
+          </div>
+        </form>
+
+        <div class="items-list">
+          <div class="items-vacio" *ngIf="items.length === 0">
+            <p>Hacé clic en un producto para agregarlo.</p>
+          </div>
+          <div class="compra-item" *ngFor="let item of items">
+            <div class="item-top">
+              <span class="item-nombre">{{ item.productoNombre }}</span>
+              <button class="btn-remove" (click)="cambiarCantidad(item, -item.cantidad)">✕</button>
+            </div>
+            <div class="item-bottom">
+              <div class="qty-ctrl">
+                <button class="qty-btn" (click)="cambiarCantidad(item, -1)">−</button>
+                <span class="qty">{{ item.cantidad }}</span>
+                <button class="qty-btn" (click)="cambiarCantidad(item, +1)">+</button>
+              </div>
+              <div class="precio-ctrl">
+                <span class="label">$/u</span>
+                <input class="input input--sm" type="number" [value]="item.precioUnitario" min="0" step="0.01"
+                       (change)="cambiarPrecio(item, +$any($event.target).value)">
+              </div>
+              <strong class="item-subtotal">$ {{ item.subtotal | number:'1.2-2' }}</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="total-bloque" *ngIf="items.length > 0">
+          <div class="total-row"><span>TOTAL</span><strong>$ {{ total | number:'1.2-2' }}</strong></div>
+        </div>
+
+        <div class="card-footer">
+          <button class="btn btn-primary btn-full" [disabled]="guardando || items.length === 0" (click)="confirmar()">
+            {{ guardando ? 'Procesando…' : 'Confirmar compra' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

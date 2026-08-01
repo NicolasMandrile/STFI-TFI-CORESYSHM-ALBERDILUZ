@@ -1,0 +1,98 @@
+<div class="usuarios">
+  <div class="usuarios-header">
+    <h1>Usuarios</h1>
+    <button class="btn-primary" *appHasPermission="'usuarios.create'" (click)="abrirCrear()">+ Nuevo usuario</button>
+  </div>
+
+  <div class="filtros">
+    <select [(ngModel)]="filtroRol" (ngModelChange)="cargar()">
+      <option value="">Todos los roles</option>
+      <option *ngFor="let r of roles" [value]="r.name">{{ r.name }}</option>
+    </select>
+    <select [(ngModel)]="filtroActivo" (ngModelChange)="cargar()">
+      <option value="">Todos los estados</option>
+      <option value="true">Activos</option>
+      <option value="false">Inactivos</option>
+    </select>
+  </div>
+
+  <p class="mensaje-error" *ngIf="error">{{ error }}</p>
+
+  <table class="tabla" *ngIf="!cargando; else loadingTpl">
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>Email</th>
+        <th>Rol</th>
+        <th>Estado</th>
+        <th>Último acceso</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let u of usuarios">
+        <td>{{ u.nombre }} {{ u.apellido }}</td>
+        <td>{{ u.email }}</td>
+        <td>{{ u.rol }}</td>
+        <td>
+          <span class="badge" [class.badge--ok]="u.isActive" [class.badge--off]="!u.isActive">
+            {{ u.isActive ? 'Activo' : 'Inactivo' }}
+          </span>
+        </td>
+        <td>{{ u.ultimoAcceso ? (u.ultimoAcceso | date:'short') : '-' }}</td>
+        <td class="acciones">
+          <button *appHasPermission="'usuarios.edit'" (click)="abrirEditar(u)">Editar</button>
+          <button *appHasPermission="'usuarios.edit'" (click)="toggleActivo(u)">
+            {{ u.isActive ? 'Desactivar' : 'Activar' }}
+          </button>
+          <button *appHasPermission="'usuarios.reset_password'" (click)="resetearPassword(u)">Resetear password</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <ng-template #loadingTpl><p>Cargando...</p></ng-template>
+
+  <div class="modal-overlay" *ngIf="mostrarForm">
+    <div class="modal">
+      <h2>{{ editandoId ? 'Editar usuario' : 'Nuevo usuario' }}</h2>
+      <form [formGroup]="form" (ngSubmit)="guardar()">
+        <label>
+          Nombre de usuario
+          <input formControlName="nombreUsuario" [readonly]="!!editandoId" />
+        </label>
+        <label>
+          Email
+          <input formControlName="email" [readonly]="!!editandoId" />
+        </label>
+        <label *ngIf="!editandoId">
+          Password inicial
+          <input type="password" formControlName="password" />
+        </label>
+        <label>
+          Nombre
+          <input formControlName="nombre" />
+        </label>
+        <label>
+          Apellido
+          <input formControlName="apellido" />
+        </label>
+        <label>
+          Rol
+          <select formControlName="rol">
+            <option value="" disabled>Seleccionar...</option>
+            <option *ngFor="let r of roles" [value]="r.name">{{ r.name }}</option>
+          </select>
+        </label>
+
+        <p class="mensaje-error" *ngIf="formError">{{ formError }}</p>
+
+        <div class="modal-actions">
+          <button type="button" (click)="cancelar()">Cancelar</button>
+          <button type="submit" class="btn-primary" [disabled]="guardando">
+            {{ guardando ? 'Guardando...' : 'Guardar' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

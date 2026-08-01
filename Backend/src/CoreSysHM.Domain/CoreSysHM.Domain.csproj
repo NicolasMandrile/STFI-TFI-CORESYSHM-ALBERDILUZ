@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Solo trae las clases modelo de Identity (IdentityUser<TKey>, IdentityRole<TKey>), sin EF Core
+         ni ASP.NET hosting. Es la única dependencia externa de Domain: decisión consciente para que
+         ApplicationUser/ApplicationRole puedan vivir junto al resto de las entidades de dominio
+         (Compra.RegistradoPor sigue apuntando a ApplicationUser sin mover código de Application/Infra). -->
+    <PackageReference Include="Microsoft.Extensions.Identity.Stores" Version="8.0.10" />
+  </ItemGroup>
+
+</Project>

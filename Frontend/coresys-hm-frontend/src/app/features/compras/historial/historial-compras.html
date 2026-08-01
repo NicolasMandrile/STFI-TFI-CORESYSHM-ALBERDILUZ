@@ -1,0 +1,68 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Historial de compras</h1>
+      <p class="page-subtitle">Compras registradas y actualización de stock</p>
+    </div>
+    <a class="btn btn-primary" routerLink="/compras/nueva">+ Nueva compra</a>
+  </div>
+  <div class="filters">
+    <input class="input" type="text" placeholder="Buscar por número o proveedor…" [(ngModel)]="busqueda">
+  </div>
+  <div class="card">
+    <div *ngIf="cargando" class="loading">Cargando compras…</div>
+    <table *ngIf="!cargando" class="table">
+      <thead>
+        <tr><th>N° Compra</th><th>Fecha</th><th>Proveedor</th><th>Total</th><th>Estado</th><th>Acciones</th></tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let c of comprasFiltradas">
+          <td><code>{{ c.numeroCompra }}</code></td>
+          <td>{{ c.fecha | date:'dd/MM/yyyy HH:mm':'es' }}</td>
+          <td>{{ c.proveedorNombre }}</td>
+          <td><strong>$ {{ c.total | number:'1.2-2' }}</strong></td>
+          <td>
+            <span class="tag" [class.tag-ok]="c.estado === 'Confirmada'" [class.tag-danger]="c.estado === 'Anulada'">
+              {{ c.estado }}
+            </span>
+          </td>
+          <td class="actions">
+            <button class="btn-icon" (click)="detalle = c">👁</button>
+            <button class="btn-icon btn-icon--danger" *ngIf="c.estado === 'Confirmada'" (click)="anular(c)">🚫</button>
+          </td>
+        </tr>
+        <tr *ngIf="comprasFiltradas.length === 0">
+          <td colspan="6" class="empty">No hay compras registradas.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="modal-backdrop" *ngIf="detalle" (click)="detalle = null">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>{{ detalle.numeroCompra }}</h2>
+      <button class="btn-close" (click)="detalle = null">✕</button>
+    </div>
+    <div class="modal-body">
+      <p><strong>Proveedor:</strong> {{ detalle.proveedorNombre }}</p>
+      <p><strong>Fecha:</strong> {{ detalle.fecha | date:'dd/MM/yyyy HH:mm':'es' }}</p>
+      <p *ngIf="detalle.observaciones"><strong>Obs.:</strong> {{ detalle.observaciones }}</p>
+      <table class="table" style="margin-top:12px">
+        <thead><tr><th>Producto</th><th>Cantidad</th><th>Precio u.</th><th>Subtotal</th></tr></thead>
+        <tbody>
+          <tr *ngFor="let d of detalle.detalles">
+            <td>{{ d.productoNombre }}</td>
+            <td class="text-center">{{ d.cantidad }}</td>
+            <td>$ {{ d.precioUnitario | number:'1.2-2' }}</td>
+            <td>$ {{ d.subtotal | number:'1.2-2' }}</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="total-bloque">
+        <span>TOTAL</span><strong>$ {{ detalle.total | number:'1.2-2' }}</strong>
+      </div>
+    </div>
+  </div>
+</div>

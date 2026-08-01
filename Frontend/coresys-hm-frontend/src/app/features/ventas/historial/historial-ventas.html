@@ -1,0 +1,85 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Historial de ventas</h1>
+      <p class="page-subtitle">Consulta y anulación de ventas registradas</p>
+    </div>
+    <a class="btn btn-primary" routerLink="/ventas/nueva">+ Nueva venta</a>
+  </div>
+
+  <div class="filters">
+    <input class="input" type="text" placeholder="Buscar por número o cliente…" [(ngModel)]="busqueda">
+  </div>
+
+  <div class="card">
+    <div *ngIf="cargando" class="loading">Cargando ventas…</div>
+    <table *ngIf="!cargando" class="table">
+      <thead>
+        <tr>
+          <th>N° Venta</th>
+          <th>Fecha</th>
+          <th>Cliente</th>
+          <th>Subtotal</th>
+          <th>Descuento</th>
+          <th>Total</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let v of ventasFiltradas">
+          <td><code>{{ v.numeroVenta }}</code></td>
+          <td>{{ v.fecha | date:'dd/MM/yyyy HH:mm':'es' }}</td>
+          <td>{{ v.clienteNombre }}</td>
+          <td>$ {{ v.subtotal | number:'1.2-2' }}</td>
+          <td>$ {{ v.descuento | number:'1.2-2' }}</td>
+          <td><strong>$ {{ v.total | number:'1.2-2' }}</strong></td>
+          <td><span class="tag" [ngClass]="estadoClass(v.estado)">{{ v.estado }}</span></td>
+          <td class="actions">
+            <button class="btn-icon" title="Ver detalle" (click)="verDetalle(v)">👁</button>
+            <button class="btn-icon btn-icon--danger" title="Anular" *ngIf="v.estado !== 'Anulada'"
+                    (click)="anular(v)">🚫</button>
+          </td>
+        </tr>
+        <tr *ngIf="ventasFiltradas.length === 0">
+          <td colspan="8" class="empty">No hay ventas registradas.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal detalle -->
+<div class="modal-backdrop" *ngIf="ventaDetalle" (click)="ventaDetalle = null">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Detalle — {{ ventaDetalle.numeroVenta }}</h2>
+      <button class="btn-close" (click)="ventaDetalle = null">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="detalle-info">
+        <p><strong>Cliente:</strong> {{ ventaDetalle.clienteNombre }}</p>
+        <p><strong>Fecha:</strong> {{ ventaDetalle.fecha | date:'dd/MM/yyyy HH:mm':'es' }}</p>
+        <p><strong>Estado:</strong> <span class="tag" [ngClass]="estadoClass(ventaDetalle.estado)">{{ ventaDetalle.estado }}</span></p>
+      </div>
+      <table class="table">
+        <thead>
+          <tr><th>Producto</th><th>Cantidad</th><th>Precio unit.</th><th>Subtotal</th></tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let d of ventaDetalle.detalles">
+            <td>{{ d.productoNombre }}</td>
+            <td class="text-center">{{ d.cantidad }}</td>
+            <td>$ {{ d.precioUnitario | number:'1.2-2' }}</td>
+            <td>$ {{ d.subtotal | number:'1.2-2' }}</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="detalle-total">
+        <div class="total-row"><span>Subtotal</span><span>$ {{ ventaDetalle.subtotal | number:'1.2-2' }}</span></div>
+        <div class="total-row"><span>Descuento</span><span>$ {{ ventaDetalle.descuento | number:'1.2-2' }}</span></div>
+        <div class="total-row total-final"><span>TOTAL</span><span>$ {{ ventaDetalle.total | number:'1.2-2' }}</span></div>
+      </div>
+    </div>
+  </div>
+</div>
