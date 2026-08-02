@@ -54,7 +54,8 @@ public class VentasController : ControllerBase
     {
         // Rol Cliente: el ClienteId del body NO es confiable (permitiría registrar ventas a
         // nombre de otro cliente). Se pisa siempre con el cliente de negocio vinculado al login.
-        if (User.IsInRole(RoleNames.Cliente))
+        var esCliente = User.IsInRole(RoleNames.Cliente);
+        if (esCliente)
         {
             var clienteIdPropio = await ObtenerFiltroClienteAsync();
             if (clienteIdPropio is null or SinClienteVinculado)
@@ -62,7 +63,9 @@ public class VentasController : ControllerBase
             dto.ClienteId = clienteIdPropio.Value;
         }
 
-        var result = await _ventaService.CreateAsync(dto);
+        // Autoservicio de portal (rol Cliente) queda Pendiente hasta que Administrador/Administrativo
+        // la confirme vía POST .../confirmar; ventas registradas por staff se confirman directo.
+        var result = await _ventaService.CreateAsync(dto, creadaPorCliente: esCliente);
         return result.Exitoso ? CreatedAtAction(nameof(GetById), new { id = result.Data?.Id }, result) : BadRequest(result);
     }
 

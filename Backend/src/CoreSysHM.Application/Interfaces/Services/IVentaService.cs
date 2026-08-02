@@ -11,7 +11,12 @@ public interface IVentaService
     /// </param>
     Task<ApiResponse<IEnumerable<VentaDto>>> GetAllAsync(int? clienteIdFiltro = null);
     Task<ApiResponse<VentaDto>> GetByIdAsync(int id, int? clienteIdFiltro = null);
-    Task<ApiResponse<VentaDto>> CreateAsync(CreateVentaDto dto);
+    /// <param name="creadaPorCliente">
+    /// true cuando la venta la registra un login con rol Cliente (autoservicio de portal): queda
+    /// en EstadoVenta.Pendiente hasta que Administrador/Administrativo la confirme. false (staff)
+    /// = EstadoVenta.Confirmada directamente.
+    /// </param>
+    Task<ApiResponse<VentaDto>> CreateAsync(CreateVentaDto dto, bool creadaPorCliente = false);
     Task<ApiResponse<bool>> ConfirmarAsync(int id);
     Task<ApiResponse<bool>> AnularAsync(int id);
     Task<ApiResponse<IEnumerable<ClienteDto>>> GetClientesAsync();

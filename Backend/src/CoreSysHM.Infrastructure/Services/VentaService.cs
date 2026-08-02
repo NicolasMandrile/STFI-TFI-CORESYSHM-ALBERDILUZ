@@ -60,7 +60,7 @@ public class VentaService : IVentaService
             .FirstOrDefaultAsync();
     }
 
-    public async Task<ApiResponse<VentaDto>> CreateAsync(CreateVentaDto dto)
+    public async Task<ApiResponse<VentaDto>> CreateAsync(CreateVentaDto dto, bool creadaPorCliente = false)
     {
         if (!dto.Detalles.Any())
             return ApiResponse<VentaDto>.Failure("La venta debe tener al menos un producto.");
@@ -98,7 +98,7 @@ public class VentaService : IVentaService
                 Fecha = DateTime.UtcNow,
                 ClienteId = dto.ClienteId,
                 Descuento = dto.Descuento,
-                Estado = EstadoVenta.Confirmada,
+                Estado = creadaPorCliente ? EstadoVenta.Pendiente : EstadoVenta.Confirmada,
                 Observaciones = dto.Observaciones
             };
 

@@ -3,7 +3,6 @@ import { Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { VentaService } from '../../../core/services/venta.service';
 import { ProductoService } from '../../../core/services/producto.service';
-import { CategoriaService } from '../../../core/services/categoria.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { Cliente } from '../../../core/models/ventas/cliente.model';
 import { Producto } from '../../../core/models/stock/producto.model';
@@ -19,7 +18,6 @@ import { ItemCarrito } from '../../../core/models/ventas/venta.model';
 export class NuevaVentaComponent implements OnInit {
   private readonly ventaSvc     = inject(VentaService);
   private readonly productoSvc  = inject(ProductoService);
-  private readonly categoriaSvc = inject(CategoriaService);
   private readonly authSvc      = inject(AuthService);
   private readonly fb          = inject(FormBuilder);
   private readonly router      = inject(Router);
@@ -95,10 +93,10 @@ export class NuevaVentaComponent implements OnInit {
     }
     this.productoSvc.getAll().subscribe(r => {
       this.productos = (r.data ?? []).filter(p => p.stockActual > 0);
-      this.cdr.detectChanges();
-    });
-    this.categoriaSvc.getAll().subscribe(r => {
-      this.categorias = r.data ?? [];
+      // Se arma acá (no via CategoriaService) porque el rol Cliente no tiene permiso
+      // categorias.view: cada producto ya trae categoriaId/categoriaNombre.
+      const porId = new Map(this.productos.map(p => [p.categoriaId, { id: p.categoriaId, nombre: p.categoriaNombre }]));
+      this.categorias = Array.from(porId.values()).sort((a, b) => a.nombre.localeCompare(b.nombre));
       this.cdr.detectChanges();
     });
   }
