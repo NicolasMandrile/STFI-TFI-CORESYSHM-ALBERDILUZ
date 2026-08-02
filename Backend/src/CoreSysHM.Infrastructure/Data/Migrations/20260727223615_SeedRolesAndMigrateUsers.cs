@@ -15,12 +15,13 @@ namespace CoreSysHM.Infrastructure.Data.Migrations
             // el estado INICIAL, editable luego por el Administrador vía RoleManagementService.
             migrationBuilder.Sql(@"
                 DECLARE @AdministrativoPermisos NVARCHAR(MAX) = N'[""productos.view"",""productos.create"",""productos.edit"",""productos.delete"",""categorias.view"",""categorias.create"",""categorias.edit"",""categorias.delete"",""proveedores.view"",""proveedores.create"",""proveedores.edit"",""proveedores.delete"",""stock.view"",""stock.registrar"",""ventas.view"",""ventas.create"",""ventas.anular"",""clientes.view"",""clientes.create"",""clientes.edit"",""compras.view"",""compras.create"",""compras.anular"",""facturas.view"",""facturas.anular"",""reportes.ver"",""reportes.exportar""]';
+                DECLARE @ClientePermisos NVARCHAR(MAX) = N'[""ventas.view"",""ventas.create"",""productos.view""]';
 
                 INSERT INTO AspNetRoles (Name, NormalizedName, ConcurrencyStamp, Description, IsActive, IsSystem, IsSeeded, CreatedAt, Permissions)
                 VALUES
                 (N'Administrador', N'ADMINISTRADOR', CONVERT(nvarchar(max), NEWID()), N'Acceso total al sistema. Rol de sistema, no editable ni eliminable.', 1, 1, 1, SYSUTCDATETIME(), N'[]'),
                 (N'Administrativo', N'ADMINISTRATIVO', CONVERT(nvarchar(max), NEWID()), N'Acceso operativo a los módulos de negocio. Rol protegido, editable.', 1, 0, 1, SYSUTCDATETIME(), @AdministrativoPermisos),
-                (N'Cliente', N'CLIENTE', CONVERT(nvarchar(max), NEWID()), N'Acceso restringido a información propia. Rol protegido, editable.', 1, 0, 1, SYSUTCDATETIME(), N'[]');
+                (N'Cliente', N'CLIENTE', CONVERT(nvarchar(max), NEWID()), N'Acceso restringido a información propia. Rol protegido, editable.', 1, 0, 1, SYSUTCDATETIME(), @ClientePermisos);
             ");
 
             // 2) Copiar Usuarios -> AspNetUsers preservando el Id (Compra.RegistradoPorId depende
@@ -43,9 +44,18 @@ namespace CoreSysHM.Infrastructure.Data.Migrations
 
                 SET IDENTITY_INSERT dbo.AspNetUsers OFF;
 
-                DECLARE @MaxId INT = (SELECT ISNULL(MAX(Id), 0) FROM AspNetUsers);
-                DECLARE @Sql NVARCHAR(200) = N'DBCC CHECKIDENT (''AspNetUsers'', RESEED, ' + CAST(@MaxId AS NVARCHAR(20)) + ')';
-                EXEC sp_executesql @Sql;
+                -- Solo reseedear si se copió al menos una fila: en una BD nueva (Usuarios vacía)
+                -- AspNetUsers queda vacía acá, y reseedear una tabla vacía a 0 hace que SQL Server
+                -- le asigne Id=0 a la PRIMERA fila insertada después (en vez de 1), lo que rompe
+                -- IdentityUserRole<int> más adelante (Id=0 colisiona con el sentinel de EF Core
+                -- para keys aún no generadas). Sin este INSERT, la IDENTITY(1,1) recién creada ya
+                -- arranca en 1 por sí sola, así que no hace falta reseedear.
+                IF EXISTS (SELECT 1 FROM AspNetUsers)
+                BEGIN
+                    DECLARE @MaxId INT = (SELECT MAX(Id) FROM AspNetUsers);
+                    DECLARE @Sql NVARCHAR(200) = N'DBCC CHECKIDENT (''AspNetUsers'', RESEED, ' + CAST(@MaxId AS NVARCHAR(20)) + ')';
+                    EXEC sp_executesql @Sql;
+                END
             ");
 
             // 3) Mapear el rol viejo (enum RolUsuario: Administrador=1, Operador=2, Supervisor=3)

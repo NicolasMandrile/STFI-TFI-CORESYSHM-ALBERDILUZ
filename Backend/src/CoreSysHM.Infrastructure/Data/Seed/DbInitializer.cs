@@ -21,7 +21,7 @@ public static class DbInitializer
         var configuration = services.GetRequiredService<IConfiguration>();
 
         await SeedRolesAsync(roleManager);
-        await SeedAdminAsync(userManager, configuration);
+        await SeedAdminAsync(context, roleManager, userManager, configuration);
 
         var categoriasRequeridas = new[]
         {
@@ -140,11 +140,17 @@ public static class DbInitializer
         }
     }
 
-    private static async Task SeedAdminAsync(UserManager<ApplicationUser> userManager, IConfiguration configuration)
+    private static async Task SeedAdminAsync(
+        ApplicationDbContext context,
+        RoleManager<ApplicationRole> roleManager,
+        UserManager<ApplicationUser> userManager,
+        IConfiguration configuration)
     {
         var admins = await userManager.GetUsersInRoleAsync(RoleNames.Administrador);
         if (admins.Any())
             return;
+
+        var adminRole = await roleManager.FindByNameAsync(RoleNames.Administrador);
 
         var email = configuration["InitialAdmin:Email"] ?? "admin@coresyshm.com";
         var password = configuration["InitialAdmin:Password"] ?? "Admin123!";
@@ -154,7 +160,7 @@ public static class DbInitializer
         if (existente is not null)
         {
             if (!await userManager.IsInRoleAsync(existente, RoleNames.Administrador))
-                await userManager.AddToRoleAsync(existente, RoleNames.Administrador);
+                await AsignarRolAsync(context, existente.Id, adminRole!.Id);
             return;
         }
 
@@ -171,6 +177,15 @@ public static class DbInitializer
 
         var resultado = await userManager.CreateAsync(admin, password);
         if (resultado.Succeeded)
-            await userManager.AddToRoleAsync(admin, RoleNames.Administrador);
+            await AsignarRolAsync(context, admin.Id, adminRole!.Id);
+    }
+
+    // UserManager.AddToRoleAsync dispara "IdentityUserRole<int>.UserId is unknown" en EF Core
+    // (Context.Update(user) dentro de UserStore.UpdateAsync no resuelve el FK contra la fila
+    // recién agregada al ChangeTracker). Se inserta el join directamente para evitar ese camino.
+    private static async Task AsignarRolAsync(ApplicationDbContext context, int userId, int roleId)
+    {
+        context.Set<IdentityUserRole<int>>().Add(new IdentityUserRole<int> { UserId = userId, RoleId = roleId });
+        await context.SaveChangesAsync();
     }
 }
