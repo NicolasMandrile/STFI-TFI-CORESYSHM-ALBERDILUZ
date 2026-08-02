@@ -3,9 +3,11 @@ import { Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { VentaService } from '../../../core/services/venta.service';
 import { ProductoService } from '../../../core/services/producto.service';
+import { CategoriaService } from '../../../core/services/categoria.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { Cliente } from '../../../core/models/ventas/cliente.model';
 import { Producto } from '../../../core/models/stock/producto.model';
+import { Categoria } from '../../../core/models/stock/categoria.model';
 import { ItemCarrito } from '../../../core/models/ventas/venta.model';
 
 @Component({
@@ -15,9 +17,10 @@ import { ItemCarrito } from '../../../core/models/ventas/venta.model';
   styleUrl: './nueva-venta.scss'
 })
 export class NuevaVentaComponent implements OnInit {
-  private readonly ventaSvc    = inject(VentaService);
-  private readonly productoSvc = inject(ProductoService);
-  private readonly authSvc     = inject(AuthService);
+  private readonly ventaSvc     = inject(VentaService);
+  private readonly productoSvc  = inject(ProductoService);
+  private readonly categoriaSvc = inject(CategoriaService);
+  private readonly authSvc      = inject(AuthService);
   private readonly fb          = inject(FormBuilder);
   private readonly router      = inject(Router);
   private readonly cdr         = inject(ChangeDetectorRef);
@@ -25,9 +28,10 @@ export class NuevaVentaComponent implements OnInit {
   /** Rol Cliente: registra su propia venta -- el backend fuerza el ClienteId, no hay selector. */
   readonly esCliente = this.authSvc.currentUser?.rol === 'Cliente';
 
-  clientes:  Cliente[]     = [];
-  productos: Producto[]    = [];
-  carrito:   ItemCarrito[] = [];
+  clientes:   Cliente[]     = [];
+  productos:  Producto[]    = [];
+  categorias: Categoria[]   = [];
+  carrito:    ItemCarrito[] = [];
 
   cargando  = false;
   guardando = false;
@@ -36,6 +40,7 @@ export class NuevaVentaComponent implements OnInit {
 
   ventaForm!: FormGroup;
   busquedaProducto = '';
+  categoriaSeleccionada = '';
   modalCliente = false;
   clienteForm!: FormGroup;
 
@@ -50,11 +55,18 @@ export class NuevaVentaComponent implements OnInit {
   }
 
   get productosFiltrados(): Producto[] {
-    if (!this.busquedaProducto) return this.productos;
-    const q = this.busquedaProducto.toLowerCase();
-    return this.productos.filter(p =>
-      p.nombre.toLowerCase().includes(q) || p.codigo.toLowerCase().includes(q)
-    );
+    let lista = this.productos;
+    if (this.categoriaSeleccionada) {
+      const catId = +this.categoriaSeleccionada;
+      lista = lista.filter(p => p.categoriaId === catId);
+    }
+    if (this.busquedaProducto) {
+      const q = this.busquedaProducto.toLowerCase();
+      lista = lista.filter(p =>
+        p.nombre.toLowerCase().includes(q) || p.codigo.toLowerCase().includes(q)
+      );
+    }
+    return lista;
   }
 
   get subtotal(): number { return this.carrito.reduce((s, i) => s + i.precioUnitario * i.cantidad, 0); }
@@ -83,6 +95,10 @@ export class NuevaVentaComponent implements OnInit {
     }
     this.productoSvc.getAll().subscribe(r => {
       this.productos = (r.data ?? []).filter(p => p.stockActual > 0);
+      this.cdr.detectChanges();
+    });
+    this.categoriaSvc.getAll().subscribe(r => {
+      this.categorias = r.data ?? [];
       this.cdr.detectChanges();
     });
   }

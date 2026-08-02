@@ -15,7 +15,13 @@
       <div class="card">
         <div class="card-header">
           <h3>Productos disponibles</h3>
-          <input class="input" type="text" placeholder="Buscar…" [(ngModel)]="busquedaProducto">
+          <div class="filtros-productos">
+            <select class="input" [(ngModel)]="categoriaSeleccionada">
+              <option value="">Todas las categorías</option>
+              <option *ngFor="let c of categorias" [value]="c.id">{{ c.nombre }}</option>
+            </select>
+            <input class="input" type="text" placeholder="Buscar…" [(ngModel)]="busquedaProducto">
+          </div>
         </div>
         <div class="productos-grid">
           <div class="producto-card" *ngFor="let p of productosFiltrados" (click)="agregarAlCarrito(p)">
