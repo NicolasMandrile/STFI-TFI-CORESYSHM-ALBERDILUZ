@@ -9,7 +9,7 @@ namespace CoreSysHM.Infrastructure.Services;
 
 public class ReporteComprasService : IReporteComprasService
 {
-    private const int EstadoAnulada = 2;
+    private const int EstadoConfirmada = 1;
 
     private readonly ApplicationDbContext _context;
 
@@ -26,7 +26,7 @@ public class ReporteComprasService : IReporteComprasService
 
         var compras = await _context.Compras
             .Where(c => c.Activo
-                     && c.EstadoCompraId != EstadoAnulada
+                     && c.EstadoCompraId == EstadoConfirmada
                      && c.Fecha >= desde
                      && c.Fecha <= hasta24)
             .Select(c => new { c.Fecha, c.Total })
@@ -83,7 +83,7 @@ public class ReporteComprasService : IReporteComprasService
 
         var filas = await _context.Compras
             .Where(c => c.Activo
-                     && c.EstadoCompraId != EstadoAnulada
+                     && c.EstadoCompraId == EstadoConfirmada
                      && c.Fecha >= desde
                      && c.Fecha <= hasta24)
             .GroupBy(c => new { c.ProveedorId, c.Proveedor.RazonSocial, c.Proveedor.Cuit })
@@ -111,7 +111,7 @@ public class ReporteComprasService : IReporteComprasService
 
         var filas = await _context.DetallesCompra
             .Where(d => d.Compra.Activo
-                     && d.Compra.EstadoCompraId != EstadoAnulada
+                     && d.Compra.EstadoCompraId == EstadoConfirmada
                      && d.Compra.Fecha >= desde
                      && d.Compra.Fecha <= hasta24)
             .GroupBy(d => new { d.ProductoId, d.Producto.Codigo, d.Producto.Nombre })
@@ -139,20 +139,26 @@ public class ReporteComprasService : IReporteComprasService
     {
         var hasta24 = hasta.Date.AddDays(1).AddTicks(-1);
 
-        var filas = await _context.DetallesCompra
+        var registros = await _context.DetallesCompra
             .Where(d => d.ProductoId == productoId
                      && d.Compra.Activo
-                     && d.Compra.EstadoCompraId != EstadoAnulada
+                     && d.Compra.EstadoCompraId == EstadoConfirmada
                      && d.Compra.Fecha >= desde
                      && d.Compra.Fecha <= hasta24)
-            .Select(d => new EvolucionPrecioCompraDto
-            {
-                Fecha          = d.Compra.Fecha.ToString("yyyy-MM-dd"),
-                PrecioUnitario = d.PrecioUnitario,
-                NumeroCompra   = d.Compra.NumeroCompra
-            })
-            .OrderBy(x => x.Fecha)
+            .Select(d => new { d.Compra.Fecha, d.PrecioUnitario, d.Compra.NumeroCompra })
             .ToListAsync();
+
+        // DateTime.ToString(format) no es traducible a SQL: se formatea y ordena en memoria
+        // una vez materializados los registros (mismo patrón que ComprasPorPeriodoAsync).
+        var filas = registros
+            .OrderBy(r => r.Fecha)
+            .Select(r => new EvolucionPrecioCompraDto
+            {
+                Fecha          = r.Fecha.ToString("yyyy-MM-dd"),
+                PrecioUnitario = r.PrecioUnitario,
+                NumeroCompra   = r.NumeroCompra
+            })
+            .ToList();
 
         return ApiResponse<IEnumerable<EvolucionPrecioCompraDto>>.Success(filas);
     }
@@ -187,7 +193,7 @@ public class ReporteComprasService : IReporteComprasService
         var ultimosPreciosRaw = await _context.DetallesCompra
             .Where(d => productoIds.Contains(d.ProductoId)
                      && d.Compra.Activo
-                     && d.Compra.EstadoCompraId != EstadoAnulada)
+                     && d.Compra.EstadoCompraId == EstadoConfirmada)
             .GroupBy(d => d.ProductoId)
             .Select(g => new
             {
