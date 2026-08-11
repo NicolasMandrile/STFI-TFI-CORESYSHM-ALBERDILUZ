@@ -18,10 +18,9 @@
         <tr>
           <th>Razón social</th>
           <th>CUIT</th>
-          <th>Teléfono</th>
-          <th>Email</th>
+          <th>Condición fiscal</th>
           <th>Contacto</th>
-          <th>Dirección</th>
+          <th>Completitud</th>
           <th>Acciones</th>
         </tr>
       </thead>
@@ -29,17 +28,17 @@
         <tr *ngFor="let p of proveedoresFiltrados">
           <td><strong>{{ p.razonSocial }}</strong></td>
           <td>{{ p.cuit || '—' }}</td>
-          <td>{{ p.telefono || '—' }}</td>
-          <td>{{ p.email || '—' }}</td>
-          <td>{{ p.contacto || '—' }}</td>
-          <td>{{ p.direccion || '—' }}</td>
+          <td>{{ p.condicionFiscalDescripcion || '—' }}</td>
+          <td>{{ p.email || p.telefono || p.contacto || '—' }}</td>
+          <td><span class="tag" [ngClass]="completitudClass(p.completitud)">{{ p.completitud }}%</span></td>
           <td class="actions">
             <button class="btn-icon" title="Editar" (click)="abrirEdicion(p)">✏️</button>
+            <button class="btn-icon" title="Historial de cambios" (click)="verHistorial(p)">🕒</button>
             <button class="btn-icon btn-icon--danger" title="Eliminar" (click)="eliminar(p)">🗑</button>
           </td>
         </tr>
         <tr *ngIf="proveedoresFiltrados.length === 0">
-          <td colspan="7" class="empty">No hay proveedores que coincidan con la búsqueda.</td>
+          <td colspan="6" class="empty">No hay proveedores que coincidan con la búsqueda.</td>
         </tr>
       </tbody>
     </table>
@@ -80,14 +79,44 @@
           <input class="input" formControlName="contacto" placeholder="Nombre del contacto">
         </div>
       </div>
-      <div class="form-group">
-        <label>Dirección</label>
-        <input class="input" formControlName="direccion" placeholder="Av. Siempreviva 742">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Dirección</label>
+          <input class="input" formControlName="direccion" placeholder="Av. Siempreviva 742">
+        </div>
+        <div class="form-group">
+          <label>Condición fiscal</label>
+          <select class="input" formControlName="condicionFiscalId">
+            <option value="">— Sin especificar —</option>
+            <option *ngFor="let cf of condicionesFiscales" [value]="cf.id">{{ cf.descripcion }}</option>
+          </select>
+        </div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" (click)="cerrarModal()">Cancelar</button>
         <button type="submit" class="btn btn-primary">{{ editando ? 'Guardar cambios' : 'Crear proveedor' }}</button>
       </div>
     </form>
+  </div>
+</div>
+
+<!-- Modal historial de cambios -->
+<div class="modal-backdrop" *ngIf="historialAbierto" (click)="historialAbierto = false">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Historial de cambios</h2>
+      <button class="btn-close" (click)="historialAbierto = false">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="historial-item" *ngFor="let h of historial">
+        <div class="historial-header">
+          <span class="historial-accion">{{ h.accion }}</span>
+          <span class="historial-fecha">{{ h.fecha | date:'dd/MM/yyyy HH:mm':'es' }}</span>
+        </div>
+        <div class="historial-usuario" *ngIf="h.usuarioNombre">Por: {{ h.usuarioNombre }}</div>
+        <div class="historial-detalle" *ngIf="h.detalle">{{ h.detalle }}</div>
+      </div>
+      <div *ngIf="historial.length === 0" class="empty">Sin cambios registrados todavía.</div>
+    </div>
   </div>
 </div>

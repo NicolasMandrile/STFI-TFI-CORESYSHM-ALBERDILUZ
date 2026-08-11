@@ -17,5 +17,7 @@ public class Venta : BaseEntity
     public string? Observaciones { get; set; }
 
     public ICollection<DetalleVenta> Detalles { get; set; } = new List<DetalleVenta>();
-    public Factura? Factura { get; set; }
+
+    /// <summary>Facturas emitidas contra esta venta -- puede haber más de una (facturación parcial).</summary>
+    public ICollection<Factura> Facturas { get; set; } = new List<Factura>();
 }

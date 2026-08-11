@@ -8,6 +8,9 @@ export interface Cliente {
   telefono?: string;
   direccion?: string;
   localidad?: string;
+  condicionFiscalId?: number;
+  condicionFiscalDescripcion?: string;
+  completitud: number;
 }
 
 export interface CreateCliente {
@@ -19,4 +22,5 @@ export interface CreateCliente {
   telefono?: string;
   direccion?: string;
   localidad?: string;
+  condicionFiscalId?: number;
 }

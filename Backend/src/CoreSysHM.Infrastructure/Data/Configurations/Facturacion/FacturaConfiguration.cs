@@ -15,14 +15,40 @@ public class FacturaConfiguration : IEntityTypeConfiguration<Factura>
         builder.Property(x => x.Iva).HasColumnType("decimal(18,2)");
         builder.Property(x => x.Total).HasColumnType("decimal(18,2)");
         builder.Property(x => x.Estado).HasConversion<string>();
+        builder.Property(x => x.IdempotencyKey).HasMaxLength(100);
+        // .IsRowVersion() se aplica condicionalmente en ApplicationDbContext.OnModelCreating
+        // (solo SQL Server la soporta de forma nativa; rompe el esquema de los tests con Sqlite).
+
         builder.HasIndex(x => x.NumeroFactura).IsUnique();
+        builder.HasIndex(x => x.IdempotencyKey)
+               .IsUnique()
+               .HasFilter("[IdempotencyKey] IS NOT NULL")
+               .HasDatabaseName("IX_Facturas_IdempotencyKey");
+
+        // Ya NO es 1 a 1: una Venta puede tener varias Facturas (facturación parcial).
         builder.HasOne(x => x.Venta)
-               .WithOne(v => v.Factura)
-               .HasForeignKey<Factura>(x => x.VentaId)
+               .WithMany(v => v.Facturas)
+               .HasForeignKey(x => x.VentaId)
                .OnDelete(DeleteBehavior.Restrict);
+
         builder.HasOne(x => x.Cliente)
                .WithMany(c => c.Facturas)
                .HasForeignKey(x => x.ClienteId)
                .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(x => x.TipoComprobante)
+               .WithMany(t => t.Facturas)
+               .HasForeignKey(x => x.TipoComprobanteId)
+               .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(x => x.PuntoVenta)
+               .WithMany(p => p.Facturas)
+               .HasForeignKey(x => x.PuntoVentaId)
+               .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasIndex(x => x.VentaId).HasDatabaseName("IX_Facturas_VentaId");
+        builder.HasIndex(x => x.FechaEmision).HasDatabaseName("IX_Facturas_FechaEmision");
+        builder.HasIndex(x => x.PuntoVentaId).HasDatabaseName("IX_Facturas_PuntoVentaId");
+        builder.HasIndex(x => x.TipoComprobanteId).HasDatabaseName("IX_Facturas_TipoComprobanteId");
     }
 }

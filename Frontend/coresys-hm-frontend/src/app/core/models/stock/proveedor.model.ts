@@ -6,6 +6,9 @@ export interface Proveedor {
   email?: string;
   direccion?: string;
   contacto?: string;
+  condicionFiscalId?: number;
+  condicionFiscalDescripcion?: string;
+  completitud: number;
 }
 
 export interface CreateProveedor {
@@ -15,4 +18,5 @@ export interface CreateProveedor {
   email?: string;
   direccion?: string;
   contacto?: string;
+  condicionFiscalId?: number;
 }

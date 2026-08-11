@@ -1,0 +1,97 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Nueva factura</h1>
+      <p class="page-subtitle">Elegí una venta confirmada con saldo pendiente de facturar</p>
+    </div>
+  </div>
+
+  <div *ngIf="exito" class="alert alert-success">{{ exito }}</div>
+  <div *ngIf="error" class="alert alert-error">{{ error }}</div>
+
+  <div class="factura-layout">
+    <!-- Ventas facturables -->
+    <div class="ventas-panel">
+      <div class="card">
+        <div class="card-header"><h3>Ventas con saldo pendiente</h3></div>
+        <div class="ventas-lista">
+          <div *ngIf="cargando" class="loading">Cargando…</div>
+          <div class="venta-card" *ngFor="let v of ventasFacturables"
+               [class.selected]="ventaSeleccionada?.ventaId === v.ventaId"
+               (click)="seleccionarVenta(v)">
+            <div class="venta-numero">{{ v.numeroVenta }}</div>
+            <div class="venta-cliente">{{ v.clienteNombre }}</div>
+            <div class="venta-fecha">{{ v.fecha | date:'dd/MM/yyyy':'es' }}</div>
+          </div>
+          <div *ngIf="!cargando && ventasFacturables.length === 0" class="empty-productos">
+            No hay ventas con saldo pendiente de facturar.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Emisión -->
+    <div class="emision-panel" *ngIf="ventaSeleccionada">
+      <div class="card">
+        <div class="card-header"><h3>{{ ventaSeleccionada.numeroVenta }} — {{ ventaSeleccionada.clienteNombre }}</h3></div>
+
+        <div class="lineas">
+          <div class="linea" *ngFor="let l of lineas">
+            <div class="linea-info">
+              <span class="linea-nombre">{{ l.productoNombre }}</span>
+              <span class="linea-hint">Pendiente: {{ l.cantidadPendiente }} de {{ l.cantidadVenta }} — $ {{ l.precioUnitario | number:'1.2-2' }} c/u</span>
+            </div>
+            <div class="linea-controles">
+              <input class="input input--sm" type="number" min="0" [max]="l.cantidadPendiente"
+                     [value]="l.cantidadAFacturar"
+                     (change)="cambiarCantidad(l, +$any($event.target).value)"
+                     (input)="cambiarCantidad(l, +$any($event.target).value)">
+              <span class="linea-subtotal">$ {{ l.precioUnitario * l.cantidadAFacturar | number:'1.2-2' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <form [formGroup]="facturaForm" class="factura-datos">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Tipo de comprobante *</label>
+              <select class="input" formControlName="tipoComprobanteId">
+                <option value="">— Seleccionar —</option>
+                <option *ngFor="let t of tiposComprobante" [value]="t.id">{{ t.descripcion }}</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Punto de venta *</label>
+              <select class="input" formControlName="puntoVentaId">
+                <option value="">— Seleccionar —</option>
+                <option *ngFor="let p of puntosVenta" [value]="p.id">{{ p.descripcion }}</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Vencimiento</label>
+              <input class="input" type="date" formControlName="fechaVencimiento">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Observaciones</label>
+            <input class="input" formControlName="observaciones">
+          </div>
+        </form>
+
+        <div class="totales">
+          <div class="total-row"><span>Neto</span><span>$ {{ subtotal | number:'1.2-2' }}</span></div>
+          <div class="total-row"><span>IVA</span><span>$ {{ iva | number:'1.2-2' }}</span></div>
+          <div class="total-row total-row--final"><span>TOTAL</span><span>$ {{ total | number:'1.2-2' }}</span></div>
+        </div>
+
+        <div class="card-footer">
+          <button class="btn btn-primary btn-full" [disabled]="emitiendo" (click)="emitir()">
+            {{ emitiendo ? 'Emitiendo…' : 'Emitir factura' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

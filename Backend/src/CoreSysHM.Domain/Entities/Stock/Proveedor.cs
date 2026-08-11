@@ -11,5 +11,11 @@ public class Proveedor : BaseEntity
     public string? Direccion { get; set; }
     public string? Contacto { get; set; }
 
+    public int? CondicionFiscalId { get; set; }
+    public CondicionFiscal? CondicionFiscal { get; set; }
+
+    /// <summary>Token de concurrencia optimista.</summary>
+    public byte[] RowVersion { get; set; } = Array.Empty<byte>();
+
     public ICollection<Producto> Productos { get; set; } = new List<Producto>();
 }

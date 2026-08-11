@@ -5,9 +5,13 @@ import { environment } from '../../../environments/environment';
 import { ApiResponse } from '../models/api-response.model';
 import {
   ComprasPorPeriodo,
+  DesempenoCliente,
+  DesempenoProducto,
   EvolucionPrecioCompra,
+  FacturacionPorPeriodo,
   FiltrosReporte,
   FiltrosReporteCompras,
+  FiltrosReporteFacturacion,
   MargenProducto,
   ProductoMasComprado,
   ProductoMasVendido,
@@ -17,12 +21,14 @@ import {
   TicketPromedio,
   VentasPorPeriodo
 } from '../models/reportes/reporte.model';
+import { VentaFacturable } from '../models/facturacion/factura.model';
 
 @Injectable({ providedIn: 'root' })
 export class ReporteService {
   private readonly http = inject(HttpClient);
-  private readonly baseVentas  = `${environment.apiUrl}/reportes/ventas`;
-  private readonly baseCompras = `${environment.apiUrl}/reportes/compras`;
+  private readonly baseVentas      = `${environment.apiUrl}/reportes/ventas`;
+  private readonly baseCompras     = `${environment.apiUrl}/reportes/compras`;
+  private readonly baseFacturacion = `${environment.apiUrl}/reportes/facturacion`;
 
   // ── Helpers ────────────────────────────────────────────────────────────────
   private params(f: FiltrosReporte): HttpParams {
@@ -97,5 +103,39 @@ export class ReporteService {
   sugerenciasReposicion(f: FiltrosReporteCompras): Observable<ApiResponse<SugerenciaReposicion[]>> {
     return this.http.get<ApiResponse<SugerenciaReposicion[]>>(
       `${this.baseCompras}/sugerencias-reposicion`, { params: this.comprasParams(f) });
+  }
+
+  // ── Reportes de Facturación ────────────────────────────────────────────────
+  private facturacionParams(f: FiltrosReporteFacturacion): HttpParams {
+    let p = new HttpParams();
+    if (f.desde             != null) p = p.set('desde',             f.desde);
+    if (f.hasta             != null) p = p.set('hasta',             f.hasta);
+    if (f.topN              != null) p = p.set('topN',              f.topN);
+    if (f.granularidad      != null) p = p.set('granularidad',      f.granularidad);
+    if (f.puntoVentaId      != null) p = p.set('puntoVentaId',      f.puntoVentaId);
+    if (f.tipoComprobanteId != null) p = p.set('tipoComprobanteId', f.tipoComprobanteId);
+    if (f.clienteId         != null) p = p.set('clienteId',         f.clienteId);
+    if (f.productoId        != null) p = p.set('productoId',        f.productoId);
+    return p;
+  }
+
+  facturacionPorPeriodo(f: FiltrosReporteFacturacion): Observable<ApiResponse<FacturacionPorPeriodo[]>> {
+    return this.http.get<ApiResponse<FacturacionPorPeriodo[]>>(
+      `${this.baseFacturacion}/por-periodo`, { params: this.facturacionParams(f) });
+  }
+
+  desempenoClientes(f: FiltrosReporteFacturacion): Observable<ApiResponse<DesempenoCliente[]>> {
+    return this.http.get<ApiResponse<DesempenoCliente[]>>(
+      `${this.baseFacturacion}/desempeno-clientes`, { params: this.facturacionParams(f) });
+  }
+
+  desempenoProductos(f: FiltrosReporteFacturacion): Observable<ApiResponse<DesempenoProducto[]>> {
+    return this.http.get<ApiResponse<DesempenoProducto[]>>(
+      `${this.baseFacturacion}/desempeno-productos`, { params: this.facturacionParams(f) });
+  }
+
+  carteraPorFacturar(f: FiltrosReporteFacturacion): Observable<ApiResponse<VentaFacturable[]>> {
+    return this.http.get<ApiResponse<VentaFacturable[]>>(
+      `${this.baseFacturacion}/cartera-por-facturar`, { params: this.facturacionParams(f) });
   }
 }

@@ -50,6 +50,11 @@ public class ClienteDto
     public string? Telefono { get; set; }
     public string? Direccion { get; set; }
     public string? Localidad { get; set; }
+    public int? CondicionFiscalId { get; set; }
+    public string? CondicionFiscalDescripcion { get; set; }
+
+    /// <summary>% de campos relevantes para facturación completos (email, condición fiscal, domicilio, teléfono, documento).</summary>
+    public int Completitud { get; set; }
 }
 
 public class CreateClienteDto
@@ -62,4 +67,5 @@ public class CreateClienteDto
     public string? Telefono { get; set; }
     public string? Direccion { get; set; }
     public string? Localidad { get; set; }
+    public int? CondicionFiscalId { get; set; }
 }

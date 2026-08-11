@@ -67,6 +67,10 @@ public static class InfrastructureServiceExtensions
         services.AddScoped<ICompraService, CompraService>();
         services.AddScoped<IReporteService, ReporteService>();
         services.AddScoped<IReporteComprasService, ReporteComprasService>();
+        services.AddScoped<IHistorialCambioService, HistorialCambioService>();
+        services.AddScoped<IFacturaService, FacturaService>();
+        services.AddScoped<IClienteService, ClienteService>();
+        services.AddScoped<IReporteFacturacionService, ReporteFacturacionService>();
 
         return services;
     }

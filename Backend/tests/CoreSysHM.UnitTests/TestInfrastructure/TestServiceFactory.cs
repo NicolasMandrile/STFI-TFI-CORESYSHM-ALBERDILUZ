@@ -3,6 +3,7 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using CoreSysHM.Application.Common.Mappings;
 using CoreSysHM.Application.Interfaces.Services;
 using CoreSysHM.Domain.Entities.Auth;
 using CoreSysHM.Domain.Security;
@@ -52,6 +53,12 @@ internal static class TestServiceFactory
         services.AddScoped<IUserManagementService, UserManagementService>();
         services.AddScoped<IRoleManagementService, RoleManagementService>();
         services.AddScoped<IAuthService, AuthService>();
+
+        services.AddAutoMapper(typeof(MappingProfile));
+        services.AddScoped<IHistorialCambioService, HistorialCambioService>();
+        services.AddScoped<IFacturaService, FacturaService>();
+        services.AddScoped<IClienteService, ClienteService>();
+        services.AddScoped<IReporteFacturacionService, ReporteFacturacionService>();
 
         var provider = services.BuildServiceProvider();
 

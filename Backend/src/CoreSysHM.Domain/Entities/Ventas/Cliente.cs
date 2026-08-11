@@ -15,6 +15,12 @@ public class Cliente : BaseEntity
     public string? Direccion { get; set; }
     public string? Localidad { get; set; }
 
+    public int? CondicionFiscalId { get; set; }
+    public CondicionFiscal? CondicionFiscal { get; set; }
+
+    /// <summary>Token de concurrencia optimista.</summary>
+    public byte[] RowVersion { get; set; } = Array.Empty<byte>();
+
     /// <summary>
     /// Login (AspNetUsers) vinculado a este cliente de negocio -- opcional. Cuando está seteado,
     /// permite que un usuario con rol "Cliente" vea únicamente sus propias ventas (portal de cliente).

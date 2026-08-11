@@ -1,0 +1,92 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Facturas</h1>
+      <p class="page-subtitle">Comprobantes emitidos y su estado</p>
+    </div>
+    <a class="btn btn-primary" *ngIf="puedeGestionar" routerLink="/facturacion/nueva">+ Nueva factura</a>
+  </div>
+
+  <div class="filters">
+    <input class="input" type="text" placeholder="Buscar por número, cliente o venta…" [(ngModel)]="busqueda">
+  </div>
+
+  <div class="card">
+    <div *ngIf="cargando" class="loading">Cargando facturas…</div>
+    <table *ngIf="!cargando" class="table">
+      <thead>
+        <tr>
+          <th>N° Comprobante</th>
+          <th>Tipo</th>
+          <th>Fecha</th>
+          <th>Cliente</th>
+          <th>Venta</th>
+          <th>Total</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let f of facturasFiltradas">
+          <td><code>{{ f.numeroFactura }}</code></td>
+          <td>{{ f.tipoComprobanteDescripcion }}</td>
+          <td>{{ f.fechaEmision | date:'dd/MM/yyyy HH:mm':'es' }}</td>
+          <td>{{ f.clienteNombre }}</td>
+          <td><code>{{ f.numeroVenta }}</code></td>
+          <td><strong>$ {{ f.total | number:'1.2-2' }}</strong></td>
+          <td><span class="tag" [ngClass]="estadoClass(f.estado)">{{ f.estado }}</span></td>
+          <td class="actions">
+            <button class="btn-icon" title="Ver detalle" (click)="verDetalle(f)">👁</button>
+            <button class="btn-icon btn-icon--success" title="Marcar pagada" *ngIf="puedeGestionar && f.estado === 'Emitida'"
+                    (click)="pagar(f)">💲</button>
+            <button class="btn-icon btn-icon--danger" title="Anular" *ngIf="puedeGestionar && f.estado !== 'Anulada'"
+                    (click)="anular(f)">🚫</button>
+          </td>
+        </tr>
+        <tr *ngIf="facturasFiltradas.length === 0">
+          <td colspan="8" class="empty">No hay facturas emitidas.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal detalle -->
+<div class="modal-backdrop" *ngIf="facturaDetalle" (click)="facturaDetalle = null">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Detalle — {{ facturaDetalle.numeroFactura }}</h2>
+      <button class="btn-close" (click)="facturaDetalle = null">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="detalle-info">
+        <p><strong>Cliente:</strong> {{ facturaDetalle.clienteNombre }}</p>
+        <p><strong>Venta de origen:</strong> {{ facturaDetalle.numeroVenta }}</p>
+        <p><strong>Tipo:</strong> {{ facturaDetalle.tipoComprobanteDescripcion }} — Punto de venta {{ facturaDetalle.puntoVentaDescripcion }}</p>
+        <p><strong>Fecha emisión:</strong> {{ facturaDetalle.fechaEmision | date:'dd/MM/yyyy HH:mm':'es' }}</p>
+        <p *ngIf="facturaDetalle.fechaVencimiento"><strong>Vencimiento:</strong> {{ facturaDetalle.fechaVencimiento | date:'dd/MM/yyyy':'es' }}</p>
+        <p><strong>Estado:</strong> <span class="tag" [ngClass]="estadoClass(facturaDetalle.estado)">{{ facturaDetalle.estado }}</span></p>
+        <p *ngIf="facturaDetalle.observaciones"><strong>Observaciones:</strong> {{ facturaDetalle.observaciones }}</p>
+      </div>
+      <table class="table">
+        <thead>
+          <tr><th>Producto</th><th>Cantidad</th><th>Precio unit.</th><th>Impuesto</th><th>Subtotal</th></tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let d of facturaDetalle.detalles">
+            <td>{{ d.productoNombre }}</td>
+            <td class="text-center">{{ d.cantidad }}</td>
+            <td>$ {{ d.precioUnitario | number:'1.2-2' }}</td>
+            <td class="text-center">{{ d.impuesto }}%</td>
+            <td>$ {{ d.subtotal | number:'1.2-2' }}</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="detalle-total">
+        <div class="total-row"><span>Neto</span><span>$ {{ facturaDetalle.subtotal | number:'1.2-2' }}</span></div>
+        <div class="total-row"><span>IVA</span><span>$ {{ facturaDetalle.iva | number:'1.2-2' }}</span></div>
+        <div class="total-row total-final"><span>TOTAL</span><span>$ {{ facturaDetalle.total | number:'1.2-2' }}</span></div>
+      </div>
+    </div>
+  </div>
+</div>

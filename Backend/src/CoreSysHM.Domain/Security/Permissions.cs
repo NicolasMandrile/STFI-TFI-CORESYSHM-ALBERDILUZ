@@ -80,6 +80,7 @@ public static class Permissions
         public const string View = "clientes.view";
         public const string Create = "clientes.create";
         public const string Edit = "clientes.edit";
+        public const string Delete = "clientes.delete";
     }
 
     public static class Compras
@@ -92,6 +93,7 @@ public static class Permissions
     public static class Facturas
     {
         public const string View = "facturas.view";
+        public const string Create = "facturas.create";
         public const string Anular = "facturas.anular";
     }
 

@@ -37,7 +37,9 @@
           <td><span class="tag" [ngClass]="estadoClass(v.estado)">{{ v.estado }}</span></td>
           <td class="actions">
             <button class="btn-icon" title="Ver detalle" (click)="verDetalle(v)">👁</button>
-            <button class="btn-icon btn-icon--danger" title="Anular" *ngIf="v.estado !== 'Anulada'"
+            <button class="btn-icon btn-icon--success" title="Confirmar" *ngIf="puedeGestionar && v.estado === 'Pendiente'"
+                    (click)="confirmar(v)">✔</button>
+            <button class="btn-icon btn-icon--danger" title="Anular" *ngIf="puedeGestionar && v.estado !== 'Anulada'"
                     (click)="anular(v)">🚫</button>
           </td>
         </tr>

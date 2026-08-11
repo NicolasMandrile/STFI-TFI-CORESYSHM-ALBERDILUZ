@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using CoreSysHM.Domain.Entities.Auth;
+using CoreSysHM.Domain.Entities.Common;
 using CoreSysHM.Domain.Entities.Compras;
 using CoreSysHM.Domain.Entities.Facturacion;
 using CoreSysHM.Domain.Entities.Stock;
@@ -15,6 +16,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
 
     public DbSet<AuditoriaAcceso> AuditoriasAcceso => Set<AuditoriaAcceso>();
+    public DbSet<HistorialCambio> HistorialCambios => Set<HistorialCambio>();
+    public DbSet<CondicionFiscal> CondicionesFiscales => Set<CondicionFiscal>();
     public DbSet<Categoria> Categorias => Set<Categoria>();
     public DbSet<Producto> Productos => Set<Producto>();
     public DbSet<Proveedor> Proveedores => Set<Proveedor>();
@@ -26,6 +29,10 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
     public DbSet<Venta> Ventas => Set<Venta>();
     public DbSet<DetalleVenta> DetallesVenta => Set<DetalleVenta>();
     public DbSet<Factura> Facturas => Set<Factura>();
+    public DbSet<DetalleFactura> DetallesFactura => Set<DetalleFactura>();
+    public DbSet<TipoComprobante> TiposComprobante => Set<TipoComprobante>();
+    public DbSet<PuntoVenta> PuntosVenta => Set<PuntoVenta>();
+    public DbSet<NumeracionComprobante> NumeracionesComprobante => Set<NumeracionComprobante>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -131,5 +138,19 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
             .HasIndex(c => c.EstadoCompraId).HasDatabaseName("IX_Compras_EstadoCompraId");
         modelBuilder.Entity<DetalleCompra>()
             .HasIndex(d => d.ProductoId).HasDatabaseName("IX_DetallesCompra_ProductoId");
+
+        // RowVersion (concurrencia optimista) solo se activa como columna auto-generada por el
+        // motor en SQL Server (tipo "rowversion"). Sqlite no tiene equivalente nativo: si se deja
+        // .IsRowVersion() incondicional, EF omite la columna del INSERT esperando que la DB la
+        // genere, y el esquema creado por EnsureCreated() para los tests queda NOT NULL sin
+        // default -> "NOT NULL constraint failed" en cada alta. Mismo espíritu que el comentario
+        // de ApplicationRole.Permissions más arriba: evitar configuración específica de un
+        // provider que rompe el otro.
+        if (Database.IsSqlServer())
+        {
+            modelBuilder.Entity<Cliente>().Property(c => c.RowVersion).IsRowVersion();
+            modelBuilder.Entity<Proveedor>().Property(p => p.RowVersion).IsRowVersion();
+            modelBuilder.Entity<Factura>().Property(f => f.RowVersion).IsRowVersion();
+        }
     }
 }

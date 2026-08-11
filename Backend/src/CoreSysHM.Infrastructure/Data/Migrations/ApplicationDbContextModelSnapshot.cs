@@ -203,6 +203,79 @@ namespace CoreSysHM.Infrastructure.Data.Migrations
                     b.ToTable("AuditoriasAcceso");
                 });
 
+            modelBuilder.Entity("CoreSysHM.Domain.Entities.Common.CondicionFiscal", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("Activo")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Descripcion")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("FechaCreacion")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("FechaModificacion")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Descripcion")
+                        .IsUnique();
+
+                    b.ToTable("CondicionesFiscales", (string)null);
+                });
+
+            modelBuilder.Entity("CoreSysHM.Domain.Entities.Common.HistorialCambio", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("Accion")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<string>("Detalle")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Entidad")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("EntidadId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("Fecha")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("UsuarioId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Fecha")
+                        .HasDatabaseName("IX_HistorialCambios_Fecha");
+
+                    b.HasIndex("UsuarioId");
+
+                    b.HasIndex("Entidad", "EntidadId")
+                        .HasDatabaseName("IX_HistorialCambios_Entidad");
+
+                    b.ToTable("HistorialCambios", (string)null);
+                });
+
             modelBuilder.Entity("CoreSysHM.Domain.Entities.Compras.Compra", b =>
                 {
                     b.Property<int>("Id")
@@ -353,6 +426,60 @@ namespace CoreSysHM.Infrastructure.Data.Migrations
                         });
                 });
 
+            modelBuilder.Entity("CoreSysHM.Domain.Entities.Facturacion.DetalleFactura", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("Activo")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("Cantidad")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Descuento")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("DetalleVentaId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("FacturaId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("FechaCreacion")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("FechaModificacion")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("Impuesto")
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<decimal>("PrecioUnitario")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("ProductoId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Subtotal")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DetalleVentaId")
+                        .HasDatabaseName("IX_DetallesFactura_DetalleVentaId");
+
+                    b.HasIndex("FacturaId");
+
+                    b.HasIndex("ProductoId")
+                        .HasDatabaseName("IX_DetallesFactura_ProductoId");
+
+                    b.ToTable("DetallesFactura", (string)null);
+                });
+
             modelBuilder.Entity("CoreSysHM.Domain.Entities.Facturacion.Factura", b =>
                 {
                     b.Property<int>("Id")
@@ -383,6 +510,10 @@ namespace CoreSysHM.Infrastructure.Data.Migrations
                     b.Property<DateTime?>("FechaVencimiento")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("IdempotencyKey")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<decimal>("Iva")
                         .HasColumnType("decimal(18,2)");
 
@@ -394,8 +525,20 @@ namespace CoreSysHM.Infrastructure.Data.Migrations
                     b.Property<string>("Observaciones")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("PuntoVentaId")
+                        .HasColumnType("int");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
                     b.Property<decimal>("Subtotal")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("TipoComprobanteId")
+                        .HasColumnType("int");
 
                     b.Property<decimal>("Total")
                         .HasColumnType("decimal(18,2)");
@@ -407,13 +550,132 @@ namespace CoreSysHM.Infrastructure.Data.Migrations
 
                     b.HasIndex("ClienteId");
 
+                    b.HasIndex("FechaEmision")
+                        .HasDatabaseName("IX_Facturas_FechaEmision");
+
+                    b.HasIndex("IdempotencyKey")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Facturas_IdempotencyKey")
+                        .HasFilter("[IdempotencyKey] IS NOT NULL");
+
                     b.HasIndex("NumeroFactura")
                         .IsUnique();
 
+                    b.HasIndex("PuntoVentaId")
+                        .HasDatabaseName("IX_Facturas_PuntoVentaId");
+
+                    b.HasIndex("TipoComprobanteId")
+                        .HasDatabaseName("IX_Facturas_TipoComprobanteId");
+
                     b.HasIndex("VentaId")
-                        .IsUnique();
+                        .HasDatabaseName("IX_Facturas_VentaId");
 
                     b.ToTable("Facturas", (string)null);
+                });
+
+            modelBuilder.Entity("CoreSysHM.Domain.Entities.Facturacion.NumeracionComprobante", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("Activo")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("FechaCreacion")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("FechaModificacion")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("PuntoVentaId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TipoComprobanteId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UltimoNumero")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TipoComprobanteId");
+
+                    b.HasIndex("PuntoVentaId", "TipoComprobanteId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_NumeracionesComprobante_PuntoVenta_Tipo");
+
+                    b.ToTable("NumeracionesComprobante", (string)null);
+                });
+
+            modelBuilder.Entity("CoreSysHM.Domain.Entities.Facturacion.PuntoVenta", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("Activo")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Descripcion")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("FechaCreacion")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("FechaModificacion")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Descripcion")
+                        .IsUnique();
+
+                    b.ToTable("PuntosVenta", (string)null);
+                });
+
+            modelBuilder.Entity("CoreSysHM.Domain.Entities.Facturacion.TipoComprobante", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("Activo")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("AfectaStock")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Descripcion")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("FechaCreacion")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("FechaModificacion")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("SignoContable")
+                        .IsRequired()
+                        .HasMaxLength(1)
+                        .HasColumnType("nvarchar(1)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Descripcion")
+                        .IsUnique();
+
+                    b.ToTable("TiposComprobante", (string)null);
                 });
 
             modelBuilder.Entity("CoreSysHM.Domain.Entities.Stock.Categoria", b =>
@@ -565,18 +827,23 @@ namespace CoreSysHM.Infrastructure.Data.Migrations
                     b.Property<bool>("Activo")
                         .HasColumnType("bit");
 
+                    b.Property<int?>("CondicionFiscalId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Contacto")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Cuit")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<string>("Direccion")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Email")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
 
                     b.Property<DateTime>("FechaCreacion")
                         .HasColumnType("datetime2");
@@ -586,12 +853,27 @@ namespace CoreSysHM.Infrastructure.Data.Migrations
 
                     b.Property<string>("RazonSocial")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
 
                     b.Property<string>("Telefono")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CondicionFiscalId");
+
+                    b.HasIndex("Cuit")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Proveedores_Cuit")
+                        .HasFilter("[Activo] = 1");
 
                     b.ToTable("Proveedores");
                 });
@@ -609,19 +891,26 @@ namespace CoreSysHM.Infrastructure.Data.Migrations
 
                     b.Property<string>("Apellido")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int?>("CondicionFiscalId")
+                        .HasColumnType("int");
 
                     b.Property<string>("Cuit")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<string>("Direccion")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Dni")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<string>("Email")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
 
                     b.Property<DateTime>("FechaCreacion")
                         .HasColumnType("datetime2");
@@ -634,15 +923,35 @@ namespace CoreSysHM.Infrastructure.Data.Migrations
 
                     b.Property<string>("Nombre")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
 
                     b.Property<string>("Telefono")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
 
                     b.Property<int?>("UserId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CondicionFiscalId");
+
+                    b.HasIndex("Cuit")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Clientes_Cuit")
+                        .HasFilter("[Cuit] IS NOT NULL AND [Activo] = 1");
+
+                    b.HasIndex("Dni")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Clientes_Dni")
+                        .HasFilter("[Dni] IS NOT NULL AND [Activo] = 1");
 
                     b.HasIndex("UserId")
                         .IsUnique()
@@ -860,6 +1169,16 @@ namespace CoreSysHM.Infrastructure.Data.Migrations
                     b.Navigation("Usuario");
                 });
 
+            modelBuilder.Entity("CoreSysHM.Domain.Entities.Common.HistorialCambio", b =>
+                {
+                    b.HasOne("CoreSysHM.Domain.Entities.Auth.ApplicationUser", "Usuario")
+                        .WithMany()
+                        .HasForeignKey("UsuarioId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Usuario");
+                });
+
             modelBuilder.Entity("CoreSysHM.Domain.Entities.Compras.Compra", b =>
                 {
                     b.HasOne("CoreSysHM.Domain.Entities.Compras.EstadoCompra", "EstadoCompra")
@@ -905,6 +1224,33 @@ namespace CoreSysHM.Infrastructure.Data.Migrations
                     b.Navigation("Producto");
                 });
 
+            modelBuilder.Entity("CoreSysHM.Domain.Entities.Facturacion.DetalleFactura", b =>
+                {
+                    b.HasOne("CoreSysHM.Domain.Entities.Ventas.DetalleVenta", "DetalleVenta")
+                        .WithMany()
+                        .HasForeignKey("DetalleVentaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("CoreSysHM.Domain.Entities.Facturacion.Factura", "Factura")
+                        .WithMany("Detalles")
+                        .HasForeignKey("FacturaId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("CoreSysHM.Domain.Entities.Stock.Producto", "Producto")
+                        .WithMany()
+                        .HasForeignKey("ProductoId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("DetalleVenta");
+
+                    b.Navigation("Factura");
+
+                    b.Navigation("Producto");
+                });
+
             modelBuilder.Entity("CoreSysHM.Domain.Entities.Facturacion.Factura", b =>
                 {
                     b.HasOne("CoreSysHM.Domain.Entities.Ventas.Cliente", "Cliente")
@@ -913,15 +1259,50 @@ namespace CoreSysHM.Infrastructure.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("CoreSysHM.Domain.Entities.Facturacion.PuntoVenta", "PuntoVenta")
+                        .WithMany("Facturas")
+                        .HasForeignKey("PuntoVentaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("CoreSysHM.Domain.Entities.Facturacion.TipoComprobante", "TipoComprobante")
+                        .WithMany("Facturas")
+                        .HasForeignKey("TipoComprobanteId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("CoreSysHM.Domain.Entities.Ventas.Venta", "Venta")
-                        .WithOne("Factura")
-                        .HasForeignKey("CoreSysHM.Domain.Entities.Facturacion.Factura", "VentaId")
+                        .WithMany("Facturas")
+                        .HasForeignKey("VentaId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Cliente");
 
+                    b.Navigation("PuntoVenta");
+
+                    b.Navigation("TipoComprobante");
+
                     b.Navigation("Venta");
+                });
+
+            modelBuilder.Entity("CoreSysHM.Domain.Entities.Facturacion.NumeracionComprobante", b =>
+                {
+                    b.HasOne("CoreSysHM.Domain.Entities.Facturacion.PuntoVenta", "PuntoVenta")
+                        .WithMany()
+                        .HasForeignKey("PuntoVentaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("CoreSysHM.Domain.Entities.Facturacion.TipoComprobante", "TipoComprobante")
+                        .WithMany()
+                        .HasForeignKey("TipoComprobanteId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("PuntoVenta");
+
+                    b.Navigation("TipoComprobante");
                 });
 
             modelBuilder.Entity("CoreSysHM.Domain.Entities.Stock.MovimientoStock", b =>
@@ -953,12 +1334,29 @@ namespace CoreSysHM.Infrastructure.Data.Migrations
                     b.Navigation("Proveedor");
                 });
 
+            modelBuilder.Entity("CoreSysHM.Domain.Entities.Stock.Proveedor", b =>
+                {
+                    b.HasOne("CoreSysHM.Domain.Entities.Common.CondicionFiscal", "CondicionFiscal")
+                        .WithMany()
+                        .HasForeignKey("CondicionFiscalId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("CondicionFiscal");
+                });
+
             modelBuilder.Entity("CoreSysHM.Domain.Entities.Ventas.Cliente", b =>
                 {
+                    b.HasOne("CoreSysHM.Domain.Entities.Common.CondicionFiscal", "CondicionFiscal")
+                        .WithMany()
+                        .HasForeignKey("CondicionFiscalId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("CoreSysHM.Domain.Entities.Auth.ApplicationUser", "Usuario")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("CondicionFiscal");
 
                     b.Navigation("Usuario");
                 });
@@ -1054,6 +1452,21 @@ namespace CoreSysHM.Infrastructure.Data.Migrations
                     b.Navigation("Compras");
                 });
 
+            modelBuilder.Entity("CoreSysHM.Domain.Entities.Facturacion.Factura", b =>
+                {
+                    b.Navigation("Detalles");
+                });
+
+            modelBuilder.Entity("CoreSysHM.Domain.Entities.Facturacion.PuntoVenta", b =>
+                {
+                    b.Navigation("Facturas");
+                });
+
+            modelBuilder.Entity("CoreSysHM.Domain.Entities.Facturacion.TipoComprobante", b =>
+                {
+                    b.Navigation("Facturas");
+                });
+
             modelBuilder.Entity("CoreSysHM.Domain.Entities.Stock.Categoria", b =>
                 {
                     b.Navigation("Productos");
@@ -1080,7 +1493,7 @@ namespace CoreSysHM.Infrastructure.Data.Migrations
                 {
                     b.Navigation("Detalles");
 
-                    b.Navigation("Factura");
+                    b.Navigation("Facturas");
                 });
 #pragma warning restore 612, 618
         }

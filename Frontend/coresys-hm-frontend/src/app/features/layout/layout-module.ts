@@ -40,6 +40,10 @@ const routes: Routes = [
         loadChildren: () => import('../reportes-compras/reportes-compras-module').then(m => m.ReportesComprasModule)
       },
       {
+        path: 'reportes-facturacion',
+        loadChildren: () => import('../reportes-facturacion/reportes-facturacion-module').then(m => m.ReportesFacturacionModule)
+      },
+      {
         path: 'usuarios',
         canActivate: [permissionGuard],
         data: { permission: 'usuarios.view' },

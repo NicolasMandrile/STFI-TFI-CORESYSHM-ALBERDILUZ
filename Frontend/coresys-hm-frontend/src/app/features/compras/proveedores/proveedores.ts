@@ -1,7 +1,10 @@
 import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ProveedorService } from '../../../core/services/proveedor.service';
+import { CondicionFiscalService } from '../../../core/services/condicion-fiscal.service';
 import { Proveedor } from '../../../core/models/stock/proveedor.model';
+import { CondicionFiscal } from '../../../core/models/common/condicion-fiscal.model';
+import { HistorialCambio } from '../../../core/models/common/historial-cambio.model';
 
 @Component({
   selector: 'app-proveedores',
@@ -10,15 +13,20 @@ import { Proveedor } from '../../../core/models/stock/proveedor.model';
   styleUrl: './proveedores.scss'
 })
 export class ProveedoresComponent implements OnInit {
-  private readonly proveedorSvc = inject(ProveedorService);
-  private readonly fb           = inject(FormBuilder);
-  private readonly cdr          = inject(ChangeDetectorRef);
+  private readonly proveedorSvc  = inject(ProveedorService);
+  private readonly condFiscalSvc = inject(CondicionFiscalService);
+  private readonly fb            = inject(FormBuilder);
+  private readonly cdr           = inject(ChangeDetectorRef);
 
   proveedores: Proveedor[] = [];
+  condicionesFiscales: CondicionFiscal[] = [];
   cargando     = false;
   modalAbierto = false;
   editando: Proveedor | null = null;
   busqueda     = '';
+
+  historialAbierto = false;
+  historial: HistorialCambio[] = [];
 
   form!: FormGroup;
 
@@ -35,14 +43,22 @@ export class ProveedoresComponent implements OnInit {
 
   ngOnInit(): void {
     this.form = this.fb.group({
-      razonSocial: ['', Validators.required],
-      cuit:        [''],
-      telefono:    [''],
-      email:       ['', Validators.email],
-      direccion:   [''],
-      contacto:    ['']
+      razonSocial:       ['', Validators.required],
+      cuit:              [''],
+      telefono:          [''],
+      email:             ['', Validators.email],
+      direccion:         [''],
+      contacto:          [''],
+      condicionFiscalId: ['']
     });
     this.cargar();
+    this.condFiscalSvc.getAll().subscribe(r => { this.condicionesFiscales = r.data ?? []; this.cdr.detectChanges(); });
+  }
+
+  completitudClass(pct: number): string {
+    if (pct >= 80) return 'tag-ok';
+    if (pct >= 40) return 'tag-warn';
+    return 'tag-danger';
   }
 
   cargar(): void {
@@ -63,7 +79,8 @@ export class ProveedoresComponent implements OnInit {
     this.editando = p;
     this.form.patchValue({
       razonSocial: p.razonSocial, cuit: p.cuit, telefono: p.telefono,
-      email: p.email, direccion: p.direccion, contacto: p.contacto
+      email: p.email, direccion: p.direccion, contacto: p.contacto,
+      condicionFiscalId: p.condicionFiscalId ?? ''
     });
     this.modalAbierto = true;
   }
@@ -72,22 +89,37 @@ export class ProveedoresComponent implements OnInit {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
     const val = this.form.value;
     const dto = {
-      razonSocial: val.razonSocial.trim(),
-      cuit:        val.cuit?.trim()      || '',
-      telefono:    val.telefono?.trim()  || undefined,
-      email:       val.email?.trim()     || undefined,
-      direccion:   val.direccion?.trim() || undefined,
-      contacto:    val.contacto?.trim()  || undefined
+      razonSocial:       val.razonSocial.trim(),
+      cuit:              val.cuit?.trim()      || '',
+      telefono:          val.telefono?.trim()  || undefined,
+      email:             val.email?.trim()     || undefined,
+      direccion:         val.direccion?.trim() || undefined,
+      contacto:          val.contacto?.trim()  || undefined,
+      condicionFiscalId: val.condicionFiscalId ? +val.condicionFiscalId : undefined
     };
     const accion = this.editando
       ? this.proveedorSvc.update(this.editando.id, dto)
       : this.proveedorSvc.create(dto);
-    accion.subscribe(() => { this.cerrarModal(); this.cargar(); });
+    accion.subscribe({
+      next: () => { this.cerrarModal(); this.cargar(); },
+      error: e => alert(e.error?.mensaje ?? 'No se pudo guardar el proveedor.')
+    });
   }
 
   eliminar(p: Proveedor): void {
     if (!confirm(`¿Eliminar el proveedor "${p.razonSocial}"?`)) return;
-    this.proveedorSvc.delete(p.id).subscribe(() => this.cargar());
+    this.proveedorSvc.delete(p.id).subscribe({
+      next: () => this.cargar(),
+      error: e => alert(e.error?.mensaje ?? 'No se pudo eliminar el proveedor.')
+    });
+  }
+
+  verHistorial(p: Proveedor): void {
+    this.proveedorSvc.getHistorial(p.id).subscribe(r => {
+      this.historial = r.data ?? [];
+      this.historialAbierto = true;
+      this.cdr.detectChanges();
+    });
   }
 
   cerrarModal(): void { this.modalAbierto = false; this.editando = null; }

@@ -19,9 +19,9 @@ public static class RolePermissions
         Permissions.Proveedores.View, Permissions.Proveedores.Create, Permissions.Proveedores.Edit, Permissions.Proveedores.Delete,
         Permissions.Stock.View, Permissions.Stock.Registrar,
         Permissions.Ventas.View, Permissions.Ventas.Create, Permissions.Ventas.Anular,
-        Permissions.Clientes.View, Permissions.Clientes.Create, Permissions.Clientes.Edit,
+        Permissions.Clientes.View, Permissions.Clientes.Create, Permissions.Clientes.Edit, Permissions.Clientes.Delete,
         Permissions.Compras.View, Permissions.Compras.Create, Permissions.Compras.Anular,
-        Permissions.Facturas.View, Permissions.Facturas.Anular,
+        Permissions.Facturas.View, Permissions.Facturas.Create, Permissions.Facturas.Anular,
         Permissions.Reportes.Ver, Permissions.Reportes.Exportar,
     };
 

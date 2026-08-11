@@ -9,6 +9,11 @@ public class ProveedorDto
     public string? Email { get; set; }
     public string? Direccion { get; set; }
     public string? Contacto { get; set; }
+    public int? CondicionFiscalId { get; set; }
+    public string? CondicionFiscalDescripcion { get; set; }
+
+    /// <summary>% de campos relevantes para facturación completos (email, condición fiscal, domicilio, teléfono, contacto).</summary>
+    public int Completitud { get; set; }
 }
 
 public class CreateProveedorDto
@@ -19,4 +24,5 @@ public class CreateProveedorDto
     public string? Email { get; set; }
     public string? Direccion { get; set; }
     public string? Contacto { get; set; }
+    public int? CondicionFiscalId { get; set; }
 }

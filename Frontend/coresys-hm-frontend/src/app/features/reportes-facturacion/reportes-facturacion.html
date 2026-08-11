@@ -1,0 +1,198 @@
+<div class="page">
+
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Reportes de facturación</h1>
+      <p class="page-subtitle">Análisis y estadísticas del módulo de facturación</p>
+    </div>
+    <button class="btn btn-outline" (click)="exportarCSV()" title="Exportar a CSV">⬇ Exportar CSV</button>
+  </div>
+
+  <div class="tabs">
+    <button *ngFor="let t of tabs" class="tab" [class.tab--active]="tabActiva === t.id" (click)="cambiarTab(t.id)">
+      {{ t.label }}
+    </button>
+  </div>
+
+  <div class="filters-card">
+    <form [formGroup]="form" class="filters-form">
+      <ng-container *ngIf="tabActiva !== 'cartera'">
+        <div class="filter-group">
+          <label>Desde</label>
+          <input class="input" type="date" formControlName="desde">
+        </div>
+        <div class="filter-group">
+          <label>Hasta</label>
+          <input class="input" type="date" formControlName="hasta">
+        </div>
+      </ng-container>
+
+      <div class="filter-group" *ngIf="tabActiva === 'clientes' || tabActiva === 'productos'">
+        <label>Top N</label>
+        <input class="input input--sm" type="number" formControlName="topN" min="1" max="50">
+      </div>
+
+      <div class="filter-group" *ngIf="tabActiva === 'periodo'">
+        <label>Granularidad</label>
+        <select class="input input--sm" formControlName="granularidad">
+          <option *ngFor="let g of granularidades" [value]="g.value">{{ g.label }}</option>
+        </select>
+      </div>
+
+      <div class="filter-group" *ngIf="tabActiva === 'periodo'">
+        <label>Punto de venta</label>
+        <select class="input" formControlName="puntoVentaId">
+          <option [value]="null">Todos</option>
+          <option *ngFor="let p of puntosVenta" [value]="p.id">{{ p.descripcion }}</option>
+        </select>
+      </div>
+
+      <div class="filter-group" *ngIf="tabActiva === 'periodo'">
+        <label>Tipo de comprobante</label>
+        <select class="input" formControlName="tipoComprobanteId">
+          <option [value]="null">Todos</option>
+          <option *ngFor="let t of tiposComprobante" [value]="t.id">{{ t.descripcion }}</option>
+        </select>
+      </div>
+
+      <div class="filter-group" *ngIf="tabActiva === 'clientes' || tabActiva === 'cartera'">
+        <label>Cliente (opcional)</label>
+        <select class="input" formControlName="clienteId">
+          <option [value]="null">Todos los clientes</option>
+          <option *ngFor="let c of clientes" [value]="c.id">{{ c.apellido }}, {{ c.nombre }}</option>
+        </select>
+      </div>
+
+      <div class="filter-group" *ngIf="tabActiva === 'productos'">
+        <label>Producto (opcional)</label>
+        <select class="input" formControlName="productoId">
+          <option [value]="null">Todos los productos</option>
+          <option *ngFor="let p of productos" [value]="p.id">[{{ p.codigo }}] {{ p.nombre }}</option>
+        </select>
+      </div>
+
+      <button type="button" class="btn btn-primary" (click)="cargar()" [disabled]="cargando">
+        {{ cargando ? 'Cargando…' : 'Aplicar' }}
+      </button>
+    </form>
+  </div>
+
+  <div *ngIf="error" class="alert-error">{{ error }}</div>
+  <div *ngIf="cargando" class="loading-state">Generando reporte…</div>
+
+  <!-- KPIs -->
+  <div class="kpis" *ngIf="!cargando">
+    <ng-container *ngIf="tabActiva === 'periodo'">
+      <div class="kpi-card"><span class="kpi-label">Comprobantes</span><span class="kpi-value">{{ kpiPeriodo.cantidad }}</span></div>
+      <div class="kpi-card"><span class="kpi-label">Total facturado</span><span class="kpi-value">$ {{ kpiPeriodo.suma | number:'1.2-2' }}</span></div>
+      <div class="kpi-card"><span class="kpi-label">Promedio por comprobante</span><span class="kpi-value">$ {{ kpiPeriodo.promedio | number:'1.2-2' }}</span></div>
+    </ng-container>
+    <ng-container *ngIf="tabActiva === 'clientes'">
+      <div class="kpi-card"><span class="kpi-label">Comprobantes</span><span class="kpi-value">{{ kpiClientes.cantidad }}</span></div>
+      <div class="kpi-card"><span class="kpi-label">Monto total</span><span class="kpi-value">$ {{ kpiClientes.suma | number:'1.2-2' }}</span></div>
+      <div class="kpi-card"><span class="kpi-label">Ticket promedio</span><span class="kpi-value">$ {{ kpiClientes.promedio | number:'1.2-2' }}</span></div>
+    </ng-container>
+    <ng-container *ngIf="tabActiva === 'productos'">
+      <div class="kpi-card"><span class="kpi-label">Unidades facturadas</span><span class="kpi-value">{{ kpiProductos.cantidad }}</span></div>
+      <div class="kpi-card"><span class="kpi-label">Monto total</span><span class="kpi-value">$ {{ kpiProductos.suma | number:'1.2-2' }}</span></div>
+      <div class="kpi-card"><span class="kpi-label">Promedio por producto</span><span class="kpi-value">$ {{ kpiProductos.promedio | number:'1.2-2' }}</span></div>
+    </ng-container>
+    <ng-container *ngIf="tabActiva === 'cartera'">
+      <div class="kpi-card"><span class="kpi-label">Ventas con saldo</span><span class="kpi-value">{{ kpiCartera.cantidad }}</span></div>
+      <div class="kpi-card"><span class="kpi-label">Importe pendiente</span><span class="kpi-value">$ {{ kpiCartera.suma | number:'1.2-2' }}</span></div>
+      <div class="kpi-card"><span class="kpi-label">Promedio por venta</span><span class="kpi-value">$ {{ kpiCartera.promedio | number:'1.2-2' }}</span></div>
+    </ng-container>
+  </div>
+
+  <!-- REPORTE 1: Facturación por período -->
+  <ng-container *ngIf="!cargando && tabActiva === 'periodo'">
+    <div *ngIf="porPeriodo.length === 0" class="empty-state">Sin datos para el período seleccionado.</div>
+    <ng-container *ngIf="porPeriodo.length > 0">
+      <div class="card chart-card"><canvas #chartCanvas></canvas></div>
+      <div class="card">
+        <table class="table">
+          <thead>
+            <tr><th>Período</th><th class="text-right">Comprobantes</th><th class="text-right">Neto</th><th class="text-right">IVA</th><th class="text-right">Total</th></tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let r of porPeriodo">
+              <td>{{ r.periodo }}</td>
+              <td class="text-right">{{ r.cantidadComprobantes }}</td>
+              <td class="text-right">$ {{ r.neto | number:'1.2-2' }}</td>
+              <td class="text-right">$ {{ r.iva | number:'1.2-2' }}</td>
+              <td class="text-right text-primary"><strong>$ {{ r.total | number:'1.2-2' }}</strong></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </ng-container>
+  </ng-container>
+
+  <!-- REPORTE 2: Desempeño por cliente -->
+  <ng-container *ngIf="!cargando && tabActiva === 'clientes'">
+    <div *ngIf="desempenoClientes.length === 0" class="empty-state">Sin datos para el período seleccionado.</div>
+    <div class="card" *ngIf="desempenoClientes.length > 0">
+      <table class="table">
+        <thead>
+          <tr><th class="rank">#</th><th>Cliente</th><th class="text-right">Comprobantes</th><th class="text-right">Monto total</th><th class="text-right">Ticket promedio</th></tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let r of desempenoClientes; let i = index">
+            <td class="rank">{{ i + 1 }}</td>
+            <td><strong>{{ r.clienteNombre }}</strong></td>
+            <td class="text-right">{{ r.cantidadComprobantes }}</td>
+            <td class="text-right text-primary">$ {{ r.montoTotal | number:'1.2-2' }}</td>
+            <td class="text-right">$ {{ r.ticketPromedio | number:'1.2-2' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </ng-container>
+
+  <!-- REPORTE 3: Desempeño por producto -->
+  <ng-container *ngIf="!cargando && tabActiva === 'productos'">
+    <div *ngIf="desempenoProductos.length === 0" class="empty-state">Sin datos para el período seleccionado.</div>
+    <div class="card" *ngIf="desempenoProductos.length > 0">
+      <table class="table">
+        <thead>
+          <tr><th class="rank">#</th><th>Código</th><th>Producto</th><th class="text-right">Cant. facturada</th><th class="text-right">Monto total</th></tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let r of desempenoProductos; let i = index">
+            <td class="rank">{{ i + 1 }}</td>
+            <td><code>{{ r.codigo }}</code></td>
+            <td>{{ r.nombre }}</td>
+            <td class="text-right"><strong>{{ r.cantidadFacturada }}</strong></td>
+            <td class="text-right text-primary">$ {{ r.montoTotal | number:'1.2-2' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </ng-container>
+
+  <!-- REPORTE 4: Cartera por facturar -->
+  <ng-container *ngIf="!cargando && tabActiva === 'cartera'">
+    <div *ngIf="cartera.length === 0" class="empty-state">No hay ventas con saldo pendiente de facturar.</div>
+    <div class="card" *ngIf="cartera.length > 0">
+      <table class="table">
+        <thead>
+          <tr><th>Venta</th><th>Cliente</th><th>Fecha</th><th>Producto</th><th class="text-right">Pendiente</th><th class="text-right">Importe pendiente</th></tr>
+        </thead>
+        <tbody>
+          <ng-container *ngFor="let v of cartera">
+            <tr *ngFor="let l of v.lineas; let first = first">
+              <td><code *ngIf="first">{{ v.numeroVenta }}</code></td>
+              <td *ngIf="first">{{ v.clienteNombre }}</td>
+              <td *ngIf="first">{{ v.fecha | date:'dd/MM/yyyy':'es' }}</td>
+              <td *ngIf="!first" colspan="3"></td>
+              <td>{{ l.productoNombre }}</td>
+              <td class="text-right"><strong>{{ l.cantidadPendiente }}</strong> / {{ l.cantidadVenta }}</td>
+              <td class="text-right text-primary">$ {{ l.precioUnitario * l.cantidadPendiente | number:'1.2-2' }}</td>
+            </tr>
+          </ng-container>
+        </tbody>
+      </table>
+    </div>
+  </ng-container>
+
+</div>

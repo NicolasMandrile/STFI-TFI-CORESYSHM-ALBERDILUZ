@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using CoreSysHM.API.Security;
@@ -39,7 +40,7 @@ public class ProveedoresController : ControllerBase
     [HasPermission(Permissions.Proveedores.Create)]
     public async Task<IActionResult> Create([FromBody] CreateProveedorDto dto)
     {
-        var result = await _proveedorService.CreateAsync(dto);
+        var result = await _proveedorService.CreateAsync(dto, ObtenerUsuarioIdActual());
         return result.Exitoso ? Ok(result) : BadRequest(result);
     }
 
@@ -47,7 +48,7 @@ public class ProveedoresController : ControllerBase
     [HasPermission(Permissions.Proveedores.Edit)]
     public async Task<IActionResult> Update(int id, [FromBody] CreateProveedorDto dto)
     {
-        var result = await _proveedorService.UpdateAsync(id, dto);
+        var result = await _proveedorService.UpdateAsync(id, dto, ObtenerUsuarioIdActual());
         return result.Exitoso ? Ok(result) : BadRequest(result);
     }
 
@@ -55,7 +56,21 @@ public class ProveedoresController : ControllerBase
     [Authorize(Roles = "Administrador")]
     public async Task<IActionResult> Delete(int id)
     {
-        var result = await _proveedorService.DeleteAsync(id);
+        var result = await _proveedorService.DeleteAsync(id, ObtenerUsuarioIdActual());
         return result.Exitoso ? Ok(result) : BadRequest(result);
+    }
+
+    [HttpGet("{id}/historial")]
+    [HasPermission(Permissions.Proveedores.View)]
+    public async Task<IActionResult> GetHistorial(int id)
+    {
+        var result = await _proveedorService.GetHistorialAsync(id);
+        return Ok(result);
+    }
+
+    private int? ObtenerUsuarioIdActual()
+    {
+        var claim = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
+        return int.TryParse(claim, out var id) ? id : null;
     }
 }

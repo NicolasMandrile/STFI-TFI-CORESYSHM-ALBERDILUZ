@@ -29,7 +29,9 @@ public class MappingProfile : Profile
             .ForMember(d => d.ProductoCodigo, o => o.MapFrom(s => s.Producto != null ? s.Producto.Codigo : string.Empty));
 
         // Proveedor
-        CreateMap<Proveedor, ProveedorDto>();
+        CreateMap<Proveedor, ProveedorDto>()
+            .ForMember(d => d.CondicionFiscalDescripcion, o => o.MapFrom(s => s.CondicionFiscal != null ? s.CondicionFiscal.Descripcion : null))
+            .ForMember(d => d.Completitud, o => o.MapFrom(s => CalcularCompletitudProveedor(s)));
         CreateMap<CreateProveedorDto, Proveedor>();
 
         // Compras
@@ -42,7 +44,9 @@ public class MappingProfile : Profile
             .ForMember(d => d.ProductoNombre, o => o.MapFrom(s => s.Producto != null ? s.Producto.Nombre : string.Empty));
 
         // Ventas
-        CreateMap<Cliente, ClienteDto>();
+        CreateMap<Cliente, ClienteDto>()
+            .ForMember(d => d.CondicionFiscalDescripcion, o => o.MapFrom(s => s.CondicionFiscal != null ? s.CondicionFiscal.Descripcion : null))
+            .ForMember(d => d.Completitud, o => o.MapFrom(s => CalcularCompletitudCliente(s)));
         CreateMap<CreateClienteDto, Cliente>();
 
         CreateMap<Venta, VentaDto>()
@@ -56,6 +60,40 @@ public class MappingProfile : Profile
         CreateMap<Factura, FacturaDto>()
             .ForMember(d => d.ClienteNombre, o => o.MapFrom(s => s.Cliente != null ? $"{s.Cliente.Nombre} {s.Cliente.Apellido}" : string.Empty))
             .ForMember(d => d.NumeroVenta, o => o.MapFrom(s => s.Venta != null ? s.Venta.NumeroVenta : string.Empty))
+            .ForMember(d => d.TipoComprobanteDescripcion, o => o.MapFrom(s => s.TipoComprobante != null ? s.TipoComprobante.Descripcion : string.Empty))
+            .ForMember(d => d.PuntoVentaDescripcion, o => o.MapFrom(s => s.PuntoVenta != null ? s.PuntoVenta.Descripcion : string.Empty))
             .ForMember(d => d.Estado, o => o.MapFrom(s => s.Estado.ToString()));
+
+        CreateMap<DetalleFactura, DetalleFacturaDto>()
+            .ForMember(d => d.ProductoNombre, o => o.MapFrom(s => s.Producto != null ? s.Producto.Nombre : string.Empty));
+    }
+
+    // Campos considerados relevantes para poder facturar/contactar sin fricción -- Nombre/Apellido/
+    // Cuit no cuentan porque ya son obligatorios desde el alta, no aportan a "qué tan completo" está.
+    private static int CalcularCompletitudCliente(Cliente c)
+    {
+        var campos = new[]
+        {
+            !string.IsNullOrWhiteSpace(c.Email),
+            c.CondicionFiscalId.HasValue,
+            !string.IsNullOrWhiteSpace(c.Direccion),
+            !string.IsNullOrWhiteSpace(c.Localidad),
+            !string.IsNullOrWhiteSpace(c.Telefono),
+            !string.IsNullOrWhiteSpace(c.Dni) || !string.IsNullOrWhiteSpace(c.Cuit),
+        };
+        return (int)Math.Round(100.0 * campos.Count(x => x) / campos.Length);
+    }
+
+    private static int CalcularCompletitudProveedor(Proveedor p)
+    {
+        var campos = new[]
+        {
+            !string.IsNullOrWhiteSpace(p.Email),
+            p.CondicionFiscalId.HasValue,
+            !string.IsNullOrWhiteSpace(p.Direccion),
+            !string.IsNullOrWhiteSpace(p.Telefono),
+            !string.IsNullOrWhiteSpace(p.Contacto),
+        };
+        return (int)Math.Round(100.0 * campos.Count(x => x) / campos.Length);
     }
 }

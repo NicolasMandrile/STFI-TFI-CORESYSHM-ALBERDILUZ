@@ -3,6 +3,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using CoreSysHM.Domain.Entities.Auth;
+using CoreSysHM.Domain.Entities.Common;
+using CoreSysHM.Domain.Entities.Facturacion;
 using CoreSysHM.Domain.Entities.Stock;
 using CoreSysHM.Domain.Entities.Ventas;
 using CoreSysHM.Domain.Security;
@@ -22,6 +24,7 @@ public static class DbInitializer
 
         await SeedRolesAsync(roleManager);
         await SeedAdminAsync(context, roleManager, userManager, configuration);
+        await SeedCatalogosFacturacionAsync(context);
 
         var categoriasRequeridas = new[]
         {
@@ -108,6 +111,55 @@ public static class DbInitializer
             );
             await context.SaveChangesAsync();
         }
+    }
+
+    private static async Task SeedCatalogosFacturacionAsync(ApplicationDbContext context)
+    {
+        var condicionesRequeridas = new[] { "Responsable Inscripto", "Monotributo", "Consumidor Final", "Exento" };
+        foreach (var descripcion in condicionesRequeridas)
+        {
+            if (!await context.CondicionesFiscales.AnyAsync(c => c.Descripcion == descripcion))
+                context.CondicionesFiscales.Add(new CondicionFiscal { Descripcion = descripcion });
+        }
+        await context.SaveChangesAsync();
+
+        if (!await context.TiposComprobante.AnyAsync())
+        {
+            context.TiposComprobante.AddRange(
+                new TipoComprobante { Descripcion = "Factura A", AfectaStock = true, SignoContable = "+" },
+                new TipoComprobante { Descripcion = "Factura B", AfectaStock = true, SignoContable = "+" },
+                new TipoComprobante { Descripcion = "Nota de Crédito A", AfectaStock = true, SignoContable = "-" },
+                new TipoComprobante { Descripcion = "Nota de Crédito B", AfectaStock = true, SignoContable = "-" }
+            );
+            await context.SaveChangesAsync();
+        }
+
+        if (!await context.PuntosVenta.AnyAsync())
+        {
+            context.PuntosVenta.Add(new PuntoVenta { Descripcion = "0001" });
+            await context.SaveChangesAsync();
+        }
+
+        // Un contador (arrancando en 0) por cada combinación punto de venta + tipo de comprobante,
+        // para que FacturaService pueda incrementar de forma atómica sin tener que resolver el
+        // caso "todavía no existe el contador" en el camino caliente de la emisión.
+        var puntosVenta = await context.PuntosVenta.Select(p => p.Id).ToListAsync();
+        var tiposComprobante = await context.TiposComprobante.Select(t => t.Id).ToListAsync();
+        var existentes = (await context.NumeracionesComprobante
+            .Select(n => new { n.PuntoVentaId, n.TipoComprobanteId })
+            .ToListAsync())
+            .ToHashSet();
+
+        foreach (var puntoVentaId in puntosVenta)
+            foreach (var tipoComprobanteId in tiposComprobante)
+                if (!existentes.Contains(new { PuntoVentaId = puntoVentaId, TipoComprobanteId = tipoComprobanteId }))
+                    context.NumeracionesComprobante.Add(new NumeracionComprobante
+                    {
+                        PuntoVentaId = puntoVentaId,
+                        TipoComprobanteId = tipoComprobanteId,
+                        UltimoNumero = 0
+                    });
+        await context.SaveChangesAsync();
     }
 
     private static async Task SeedRolesAsync(RoleManager<ApplicationRole> roleManager)

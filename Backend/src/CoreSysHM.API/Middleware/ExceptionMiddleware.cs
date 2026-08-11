@@ -26,6 +26,10 @@ public class ExceptionMiddleware
         {
             await HandleExceptionAsync(context, ex, HttpStatusCode.NotFound);
         }
+        catch (DuplicadoException ex)
+        {
+            await HandleExceptionAsync(context, ex, HttpStatusCode.Conflict);
+        }
         catch (DomainException ex)
         {
             await HandleExceptionAsync(context, ex, HttpStatusCode.BadRequest);
