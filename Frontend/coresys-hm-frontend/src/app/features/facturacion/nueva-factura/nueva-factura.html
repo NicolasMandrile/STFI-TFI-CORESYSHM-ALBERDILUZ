@@ -87,9 +87,12 @@
         </div>
 
         <div class="card-footer">
-          <button class="btn btn-primary btn-full" [disabled]="emitiendo" (click)="emitir()">
+          <button class="btn btn-primary btn-full" [disabled]="emitiendo || !puedeEmitir" (click)="emitir()">
             {{ emitiendo ? 'Emitiendo…' : 'Emitir factura' }}
           </button>
+          <p class="hint-incompleto" *ngIf="!emitiendo && !puedeEmitir">
+            Completá tipo de comprobante, punto de venta y al menos una cantidad a facturar.
+          </p>
         </div>
       </div>
     </div>

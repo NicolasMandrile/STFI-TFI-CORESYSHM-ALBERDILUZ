@@ -2,7 +2,13 @@
 .page-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; }
 .page-title   { font-size: 24px; font-weight: 700; color: #111827; margin: 0; }
 .page-subtitle { font-size: 14px; color: #6b7280; margin: 4px 0 0; }
-.filters { display: flex; gap: 16px; margin-bottom: 16px; .input { width: 320px; } }
+.filters { display: flex; gap: 16px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 16px; .input { width: 320px; } }
+.filter-group { display: flex; flex-direction: column; gap: 4px;
+  label { font-size: 12px; font-weight: 600; color: #374151; }
+  .input { width: auto; }
+}
+.btn { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; border: none; transition: background .15s; }
+.btn-secondary { background: #f3f4f6; color: #374151; &:hover { background: #e5e7eb; } }
 .card { background: #fff; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,.08); overflow: hidden; }
 .table {
   width: 100%; border-collapse: collapse;

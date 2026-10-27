@@ -10,13 +10,39 @@ import { ClienteService } from '../../core/services/cliente.service';
 import {
   DesempenoCliente, DesempenoProducto, FacturacionPorPeriodo, FiltrosReporteFacturacion
 } from '../../core/models/reportes/reporte.model';
-import { VentaFacturable, TipoComprobante, PuntoVenta } from '../../core/models/facturacion/factura.model';
+import { VentaFacturable, SaldoFacturarLinea, TipoComprobante, PuntoVenta } from '../../core/models/facturacion/factura.model';
 import { Producto } from '../../core/models/stock/producto.model';
 import { Cliente } from '../../core/models/ventas/cliente.model';
 
 Chart.register(...registerables);
 
 type Tab = 'periodo' | 'clientes' | 'productos' | 'cartera';
+
+// El saldo pendiente de facturar no tiene un IVA real todavía -- se define recién al emitir la
+// factura (cada línea puede llevar un % distinto). Se estima con el 21% que el resto del sistema
+// usa como default (misma alícuota con la que arranca "Nueva factura").
+const IVA_ESTIMADO = 0.21;
+
+interface LineaConImporte extends SaldoFacturarLinea {
+  importeNeto: number;
+  importeIva: number;
+  importeTotal: number;
+}
+interface VentaConImportes extends VentaFacturable {
+  lineas: LineaConImporte[];
+  totalEstimado: number;
+}
+function calcularImportes(ventas: VentaFacturable[]): VentaConImportes[] {
+  return ventas.map(v => {
+    const lineas: LineaConImporte[] = v.lineas.map(l => {
+      const importeNeto = l.precioUnitario * l.cantidadPendiente;
+      const importeIva = importeNeto * IVA_ESTIMADO;
+      return { ...l, importeNeto, importeIva, importeTotal: importeNeto + importeIva };
+    });
+    const totalEstimado = lineas.reduce((s, l) => s + l.importeTotal, 0);
+    return { ...v, lineas, totalEstimado };
+  });
+}
 
 @Component({
   selector: 'app-reportes-facturacion',
@@ -42,7 +68,8 @@ export class ReportesFacturacionComponent implements OnInit, OnDestroy {
   porPeriodo:      FacturacionPorPeriodo[] = [];
   desempenoClientes: DesempenoCliente[]    = [];
   desempenoProductos: DesempenoProducto[]  = [];
-  cartera:          VentaFacturable[]      = [];
+  cartera:          VentaConImportes[]     = [];
+  kpiCartera = { cantidad: 0, neto: 0, iva: 0, total: 0, promedio: 0 };
 
   productos: Producto[] = [];
   clientes:  Cliente[]  = [];
@@ -94,10 +121,21 @@ export class ReportesFacturacionComponent implements OnInit, OnDestroy {
     this.error = '';
     this.chart?.destroy();
     this.chart = null;
+
+    // Si la pestaña todavía no tiene datos cargados, se pide al backend de una (antes solo
+    // "período" re-renderizaba desde caché; las otras tres quedaban vacías hasta tocar "Aplicar",
+    // lo que se percibía como que el reporte "no cargaba nunca").
+    const yaCargado: Record<Tab, boolean> = {
+      periodo:   this.porPeriodo.length > 0,
+      clientes:  this.desempenoClientes.length > 0,
+      productos: this.desempenoProductos.length > 0,
+      cartera:   this.cartera.length > 0,
+    };
+
+    if (!yaCargado[tab]) { this.cargar(); return; }
+
     this.cdr.detectChanges();
-    if (tab === 'periodo' && this.porPeriodo.length) {
-      setTimeout(() => this.renderChart(), 50);
-    }
+    if (tab === 'periodo') setTimeout(() => this.renderChart(), 50);
   }
 
   cargar(): void {
@@ -137,7 +175,20 @@ export class ReportesFacturacionComponent implements OnInit, OnDestroy {
 
   private cargarCartera(f: FiltrosReporteFacturacion): void {
     this.svc.carteraPorFacturar(f).subscribe({
-      next: r => { this.cartera = r.data ?? []; this.fin(); },
+      next: r => {
+        // Los importes (neto/IVA estimado/total) se calculan UNA sola vez acá, al llegar los
+        // datos -- no en el template, que re-evalúa cualquier método en cada ciclo de detección
+        // de cambios y con ~cientos de líneas eso se nota como lentitud.
+        this.cartera = calcularImportes(r.data ?? []);
+        const lineas = this.cartera.flatMap(v => v.lineas);
+        const neto  = lineas.reduce((s, l) => s + l.importeNeto, 0);
+        const total = this.cartera.reduce((s, v) => s + v.totalEstimado, 0);
+        this.kpiCartera = {
+          cantidad: this.cartera.length, neto, iva: total - neto, total,
+          promedio: this.cartera.length ? total / this.cartera.length : 0
+        };
+        this.fin();
+      },
       error: () => this.finError()
     });
   }
@@ -178,12 +229,6 @@ export class ReportesFacturacionComponent implements OnInit, OnDestroy {
     const suma = this.desempenoProductos.reduce((s, r) => s + r.montoTotal, 0);
     return { cantidad: cant, suma, promedio: cant ? suma / cant : 0 };
   }
-  get kpiCartera() {
-    const lineas = this.cartera.flatMap(v => v.lineas);
-    const suma = lineas.reduce((s, l) => s + l.precioUnitario * l.cantidadPendiente, 0);
-    return { cantidad: this.cartera.length, suma, promedio: this.cartera.length ? suma / this.cartera.length : 0 };
-  }
-
   // ── Chart ──────────────────────────────────────────────────────────────────
   private renderChart(): void {
     this.chart?.destroy();
@@ -251,9 +296,9 @@ export class ReportesFacturacionComponent implements OnInit, OnDestroy {
         nombre = 'desempeno-por-producto';
         break;
       case 'cartera':
-        csv = 'Venta,Cliente,Producto,Cant. pendiente,Precio unitario,Importe pendiente\n'
+        csv = 'Venta,Cliente,Producto,Cant. pendiente,Precio unitario,Neto,IVA estimado (21%),Total estimado\n'
           + this.cartera.flatMap(v => v.lineas.map(l =>
-              `"${v.numeroVenta}","${v.clienteNombre}","${l.productoNombre}",${l.cantidadPendiente},${l.precioUnitario},${(l.precioUnitario * l.cantidadPendiente).toFixed(2)}`
+              `"${v.numeroVenta}","${v.clienteNombre}","${l.productoNombre}",${l.cantidadPendiente},${l.precioUnitario},${l.importeNeto.toFixed(2)},${l.importeIva.toFixed(2)},${l.importeTotal.toFixed(2)}`
             )).join('\n');
         nombre = 'cartera-por-facturar';
         break;

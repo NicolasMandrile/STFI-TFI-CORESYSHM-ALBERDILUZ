@@ -49,6 +49,14 @@ export class NuevaFacturaComponent implements OnInit {
   }
   get total(): number { return this.subtotal + this.iva; }
 
+  /** Habilita "Emitir factura" solo cuando hay venta elegida, el form es válido y al menos
+   *  una línea tiene cantidad a facturar mayor a cero. */
+  get puedeEmitir(): boolean {
+    return !!this.ventaSeleccionada &&
+      this.facturaForm?.valid === true &&
+      this.lineas.some(l => l.cantidadAFacturar > 0);
+  }
+
   ngOnInit(): void {
     this.facturaForm = this.fb.group({
       tipoComprobanteId: ['', Validators.required],

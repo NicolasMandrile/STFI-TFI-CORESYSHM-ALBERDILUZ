@@ -1,6 +1,6 @@
 import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { MovimientoStockService } from '../../../core/services/movimiento-stock.service';
-import { MovimientoStock } from '../../../core/models/stock/movimiento-stock.model';
+import { MovimientoStock, TIPOS_MOVIMIENTO } from '../../../core/models/stock/movimiento-stock.model';
 
 @Component({
   selector: 'app-movimientos',
@@ -12,18 +12,39 @@ export class MovimientosComponent implements OnInit {
   private readonly svc = inject(MovimientoStockService);
   private readonly cdr = inject(ChangeDetectorRef);
 
+  readonly tiposMovimiento = TIPOS_MOVIMIENTO;
+
   movimientos: MovimientoStock[] = [];
   cargando = false;
   busqueda = '';
+  tipoFiltro = '';
+  fechaDesde = '';
+  fechaHasta = '';
 
   get movimientosFiltrados(): MovimientoStock[] {
-    if (!this.busqueda) return this.movimientos;
-    const q = this.busqueda.toLowerCase();
-    return this.movimientos.filter(m =>
-      m.productoNombre.toLowerCase().includes(q) ||
-      m.productoCodigo.toLowerCase().includes(q) ||
-      m.tipoMovimiento.toLowerCase().includes(q)
-    );
+    return this.movimientos.filter(m => {
+      if (this.busqueda) {
+        const q = this.busqueda.toLowerCase();
+        const coincide = m.productoNombre.toLowerCase().includes(q) ||
+          m.productoCodigo.toLowerCase().includes(q) ||
+          m.tipoMovimiento.toLowerCase().includes(q);
+        if (!coincide) return false;
+      }
+      if (this.tipoFiltro && m.tipoMovimiento !== this.tipoFiltro) return false;
+
+      const fecha = m.fechaCreacion.substring(0, 10); // 'yyyy-MM-dd', mismo formato que <input type="date">
+      if (this.fechaDesde && fecha < this.fechaDesde) return false;
+      if (this.fechaHasta && fecha > this.fechaHasta) return false;
+
+      return true;
+    });
+  }
+
+  limpiarFiltros(): void {
+    this.busqueda = '';
+    this.tipoFiltro = '';
+    this.fechaDesde = '';
+    this.fechaHasta = '';
   }
 
   ngOnInit(): void {

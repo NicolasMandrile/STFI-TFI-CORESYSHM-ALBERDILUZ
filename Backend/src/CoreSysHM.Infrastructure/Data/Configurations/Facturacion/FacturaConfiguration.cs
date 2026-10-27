@@ -19,7 +19,13 @@ public class FacturaConfiguration : IEntityTypeConfiguration<Factura>
         // .IsRowVersion() se aplica condicionalmente en ApplicationDbContext.OnModelCreating
         // (solo SQL Server la soporta de forma nativa; rompe el esquema de los tests con Sqlite).
 
-        builder.HasIndex(x => x.NumeroFactura).IsUnique();
+        // Único por (PuntoVenta, TipoComprobante, Número) y NO solo por Número: cada tipo de
+        // comprobante tiene su propio contador independiente (ver NumeracionComprobante), así que
+        // "Factura A 0001-00000001" y "Nota de Crédito A 0001-00000001" son documentos distintos
+        // que legítimamente comparten el mismo número de cara al cliente.
+        builder.HasIndex(x => new { x.PuntoVentaId, x.TipoComprobanteId, x.NumeroFactura })
+               .IsUnique()
+               .HasDatabaseName("IX_Facturas_PuntoVenta_Tipo_Numero");
         builder.HasIndex(x => x.IdempotencyKey)
                .IsUnique()
                .HasFilter("[IdempotencyKey] IS NOT NULL")

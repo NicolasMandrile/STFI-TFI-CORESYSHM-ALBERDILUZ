@@ -558,9 +558,6 @@ namespace CoreSysHM.Infrastructure.Data.Migrations
                         .HasDatabaseName("IX_Facturas_IdempotencyKey")
                         .HasFilter("[IdempotencyKey] IS NOT NULL");
 
-                    b.HasIndex("NumeroFactura")
-                        .IsUnique();
-
                     b.HasIndex("PuntoVentaId")
                         .HasDatabaseName("IX_Facturas_PuntoVentaId");
 
@@ -569,6 +566,10 @@ namespace CoreSysHM.Infrastructure.Data.Migrations
 
                     b.HasIndex("VentaId")
                         .HasDatabaseName("IX_Facturas_VentaId");
+
+                    b.HasIndex("PuntoVentaId", "TipoComprobanteId", "NumeroFactura")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Facturas_PuntoVenta_Tipo_Numero");
 
                     b.ToTable("Facturas", (string)null);
                 });

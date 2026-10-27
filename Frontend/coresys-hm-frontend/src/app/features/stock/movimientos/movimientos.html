@@ -8,6 +8,19 @@
 
   <div class="filters">
     <input class="input" type="text" placeholder="Buscar producto o tipo…" [(ngModel)]="busqueda">
+    <select class="input" [(ngModel)]="tipoFiltro">
+      <option value="">Todos los tipos</option>
+      <option *ngFor="let t of tiposMovimiento" [value]="t.value">{{ t.label }}</option>
+    </select>
+    <div class="filter-group">
+      <label>Desde</label>
+      <input class="input" type="date" [(ngModel)]="fechaDesde">
+    </div>
+    <div class="filter-group">
+      <label>Hasta</label>
+      <input class="input" type="date" [(ngModel)]="fechaHasta">
+    </div>
+    <button type="button" class="btn btn-secondary" (click)="limpiarFiltros()">Limpiar filtros</button>
   </div>
 
   <div class="card">

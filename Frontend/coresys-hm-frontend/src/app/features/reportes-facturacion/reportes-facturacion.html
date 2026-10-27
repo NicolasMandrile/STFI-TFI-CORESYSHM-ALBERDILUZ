@@ -42,7 +42,7 @@
       <div class="filter-group" *ngIf="tabActiva === 'periodo'">
         <label>Punto de venta</label>
         <select class="input" formControlName="puntoVentaId">
-          <option [value]="null">Todos</option>
+          <option [ngValue]="null">Todos</option>
           <option *ngFor="let p of puntosVenta" [value]="p.id">{{ p.descripcion }}</option>
         </select>
       </div>
@@ -50,7 +50,7 @@
       <div class="filter-group" *ngIf="tabActiva === 'periodo'">
         <label>Tipo de comprobante</label>
         <select class="input" formControlName="tipoComprobanteId">
-          <option [value]="null">Todos</option>
+          <option [ngValue]="null">Todos</option>
           <option *ngFor="let t of tiposComprobante" [value]="t.id">{{ t.descripcion }}</option>
         </select>
       </div>
@@ -58,7 +58,7 @@
       <div class="filter-group" *ngIf="tabActiva === 'clientes' || tabActiva === 'cartera'">
         <label>Cliente (opcional)</label>
         <select class="input" formControlName="clienteId">
-          <option [value]="null">Todos los clientes</option>
+          <option [ngValue]="null">Todos los clientes</option>
           <option *ngFor="let c of clientes" [value]="c.id">{{ c.apellido }}, {{ c.nombre }}</option>
         </select>
       </div>
@@ -66,7 +66,7 @@
       <div class="filter-group" *ngIf="tabActiva === 'productos'">
         <label>Producto (opcional)</label>
         <select class="input" formControlName="productoId">
-          <option [value]="null">Todos los productos</option>
+          <option [ngValue]="null">Todos los productos</option>
           <option *ngFor="let p of productos" [value]="p.id">[{{ p.codigo }}] {{ p.nombre }}</option>
         </select>
       </div>
@@ -99,8 +99,9 @@
     </ng-container>
     <ng-container *ngIf="tabActiva === 'cartera'">
       <div class="kpi-card"><span class="kpi-label">Ventas con saldo</span><span class="kpi-value">{{ kpiCartera.cantidad }}</span></div>
-      <div class="kpi-card"><span class="kpi-label">Importe pendiente</span><span class="kpi-value">$ {{ kpiCartera.suma | number:'1.2-2' }}</span></div>
-      <div class="kpi-card"><span class="kpi-label">Promedio por venta</span><span class="kpi-value">$ {{ kpiCartera.promedio | number:'1.2-2' }}</span></div>
+      <div class="kpi-card"><span class="kpi-label">Neto pendiente</span><span class="kpi-value">$ {{ kpiCartera.neto | number:'1.2-2' }}</span></div>
+      <div class="kpi-card"><span class="kpi-label">Total pendiente (est.)</span><span class="kpi-value">$ {{ kpiCartera.total | number:'1.2-2' }}</span></div>
+      <div class="kpi-card"><span class="kpi-label">Promedio por venta (est.)</span><span class="kpi-value">$ {{ kpiCartera.promedio | number:'1.2-2' }}</span></div>
     </ng-container>
   </div>
 
@@ -173,26 +174,46 @@
   <!-- REPORTE 4: Cartera por facturar -->
   <ng-container *ngIf="!cargando && tabActiva === 'cartera'">
     <div *ngIf="cartera.length === 0" class="empty-state">No hay ventas con saldo pendiente de facturar.</div>
-    <div class="card" *ngIf="cartera.length > 0">
-      <table class="table">
-        <thead>
-          <tr><th>Venta</th><th>Cliente</th><th>Fecha</th><th>Producto</th><th class="text-right">Pendiente</th><th class="text-right">Importe pendiente</th></tr>
-        </thead>
-        <tbody>
-          <ng-container *ngFor="let v of cartera">
-            <tr *ngFor="let l of v.lineas; let first = first">
-              <td><code *ngIf="first">{{ v.numeroVenta }}</code></td>
-              <td *ngIf="first">{{ v.clienteNombre }}</td>
-              <td *ngIf="first">{{ v.fecha | date:'dd/MM/yyyy':'es' }}</td>
-              <td *ngIf="!first" colspan="3"></td>
-              <td>{{ l.productoNombre }}</td>
-              <td class="text-right"><strong>{{ l.cantidadPendiente }}</strong> / {{ l.cantidadVenta }}</td>
-              <td class="text-right text-primary">$ {{ l.precioUnitario * l.cantidadPendiente | number:'1.2-2' }}</td>
+    <ng-container *ngIf="cartera.length > 0">
+      <p class="nota-estimacion">
+        El IVA y el total son una <strong>estimación al 21%</strong>: la alícuota real de cada línea
+        se termina de definir recién al emitir la factura.
+      </p>
+      <div class="card">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Venta</th><th>Cliente</th><th>Fecha</th><th>Producto</th>
+              <th class="text-right">Pendiente</th><th class="text-right">Neto</th>
+              <th class="text-right">IVA (est.)</th><th class="text-right">Total (est.)</th>
             </tr>
-          </ng-container>
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody>
+            <ng-container *ngFor="let v of cartera">
+              <!-- Todas las filas (línea y subtotal) renderizan la misma cantidad de <td> reales
+                   -- nunca colspan -- para que el navegador no tenga que adivinar anchos de
+                   columna distintos entre filas y termine desalineando las celdas. -->
+              <tr *ngFor="let l of v.lineas; let first = first">
+                <td><code *ngIf="first">{{ v.numeroVenta }}</code></td>
+                <td>{{ first ? v.clienteNombre : '' }}</td>
+                <td>{{ first ? (v.fecha | date:'dd/MM/yyyy':'es') : '' }}</td>
+                <td>{{ l.productoNombre }}</td>
+                <td class="text-right"><strong>{{ l.cantidadPendiente }}</strong> / {{ l.cantidadVenta }}</td>
+                <td class="text-right">$ {{ l.importeNeto | number:'1.2-2' }}</td>
+                <td class="text-right text-muted">$ {{ l.importeIva | number:'1.2-2' }}</td>
+                <td class="text-right text-primary"><strong>$ {{ l.importeTotal | number:'1.2-2' }}</strong></td>
+              </tr>
+              <tr class="fila-subtotal">
+                <td></td><td></td><td></td>
+                <td class="text-right">Total pendiente de la venta</td>
+                <td></td><td></td><td></td>
+                <td class="text-right"><strong>$ {{ v.totalEstimado | number:'1.2-2' }}</strong></td>
+              </tr>
+            </ng-container>
+          </tbody>
+        </table>
+      </div>
+    </ng-container>
   </ng-container>
 
 </div>
